@@ -1,0 +1,8 @@
+
+telegram-bot:
+  name:
+  token:
+
+integration:
+  bsg:
+    x-api-key:
