@@ -2,11 +2,9 @@ package me.shaposhnik.hlrbot.model;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
-@RequiredArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
 public class HlrId {
-    private String id;
+    private final String id;
 }

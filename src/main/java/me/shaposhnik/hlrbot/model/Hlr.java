@@ -15,8 +15,8 @@ public class Hlr {
     private String network;
     private String status;
     
-    private boolean isPorted;
-    private boolean isInRoaming;
+    private Ported ported;
+    private Roaming roaming;
 
     private LocalDateTime createdAt;
     private LocalDateTime statusReceivedAt;
