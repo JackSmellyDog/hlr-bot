@@ -14,10 +14,7 @@ import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 
 
 @Slf4j
@@ -53,7 +50,7 @@ public class BsgApiClient {
     }
 
     public HlrResponse sendHlr(HrlRequest hrlRequest) {
-        final MultipleHlrResponse multipleHlrResponse = sendHlrs(Collections.singletonList(hrlRequest));
+        final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest));
 
         return Optional.ofNullable(multipleHlrResponse.getResult())
             .orElseGet(ArrayList::new)

@@ -22,6 +22,10 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    public void sendSimpleMessage(Long chatId, String text) {
+        sendSimpleMessage(Long.toString(chatId), text);
+    }
+
     public void sendMessageWithHTML(String chatId, String html) {
         try {
             SendMessage sendMessage = SendMessage.builder()

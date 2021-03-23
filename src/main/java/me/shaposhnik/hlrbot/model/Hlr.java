@@ -3,6 +3,8 @@ package me.shaposhnik.hlrbot.model;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import me.shaposhnik.hlrbot.model.enums.Ported;
+import me.shaposhnik.hlrbot.model.enums.Roaming;
 
 import java.time.LocalDateTime;
 

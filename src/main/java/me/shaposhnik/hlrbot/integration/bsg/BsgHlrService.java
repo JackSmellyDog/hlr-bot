@@ -7,6 +7,8 @@ import me.shaposhnik.hlrbot.integration.bsg.dto.HlrResponse;
 import me.shaposhnik.hlrbot.integration.bsg.dto.HrlRequest;
 import me.shaposhnik.hlrbot.integration.bsg.dto.MultipleHlrResponse;
 import me.shaposhnik.hlrbot.model.*;
+import me.shaposhnik.hlrbot.model.enums.Ported;
+import me.shaposhnik.hlrbot.model.enums.Roaming;
 import me.shaposhnik.hlrbot.service.HlrService;
 import org.springframework.stereotype.Service;
 
