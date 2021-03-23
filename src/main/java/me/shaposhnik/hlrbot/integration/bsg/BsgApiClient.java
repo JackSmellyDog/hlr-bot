@@ -4,14 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HlrInfo;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HlrResponse;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HrlRequest;
-import me.shaposhnik.hlrbot.integration.bsg.dto.MultipleHlrResponse;
+import me.shaposhnik.hlrbot.integration.bsg.dto.*;
 import me.shaposhnik.hlrbot.integration.bsg.exception.BsgException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
 import okhttp3.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -29,12 +25,9 @@ public class BsgApiClient {
     private final OkHttpClient client;
     private final ObjectMapper objectMapper;
 
-    @Value("${integration.bsg.x-api-key}")
-    private String apiKey;
 
-
-    public <T extends Collection<HrlRequest>> MultipleHlrResponse sendHlrs(T hrlRequests) {
-        final Request request = createHlrOkHttpRequest(hrlRequests);
+    public <T extends Collection<HrlRequest>> MultipleHlrResponse sendHlrs(T hrlRequests, ApiKey apiKey) {
+        final Request request = createHlrOkHttpRequest(hrlRequests, apiKey);
 
         try (Response response = client.newCall(request).execute()) {
             return Optional.ofNullable(response.body())
@@ -49,8 +42,8 @@ public class BsgApiClient {
         }
     }
 
-    public HlrResponse sendHlr(HrlRequest hrlRequest) {
-        final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest));
+    public HlrResponse sendHlr(HrlRequest hrlRequest, ApiKey apiKey) {
+        final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
 
         return Optional.ofNullable(multipleHlrResponse.getResult())
             .orElseGet(ArrayList::new)
@@ -59,10 +52,10 @@ public class BsgApiClient {
             .orElseThrow(BsgException::new);
     }
 
-    public HlrInfo getHlrInfo(String id) {
+    public HlrInfo getHlrInfo(String id, ApiKey apiKey) {
         Request request = new Request.Builder()
             .url(ROOT_HLR_LINK + id)
-            .header(X_API_KEY, apiKey)
+            .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
 
@@ -82,14 +75,14 @@ public class BsgApiClient {
         }
     }
 
-    private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests) {
+    private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests, ApiKey apiKey) {
         try {
             final String payload = objectMapper.writeValueAsString(hrlRequests);
             final RequestBody requestBody = RequestBody.create(payload, JSON);
 
             return new Request.Builder()
                 .url(CREATE_HLR_LINK)
-                .header(X_API_KEY, apiKey)
+                .header(X_API_KEY, apiKey.getKey())
                 .post(requestBody)
                 .build();
 

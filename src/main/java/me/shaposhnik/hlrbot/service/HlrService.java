@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface HlrService {
 
-    HlrId sendHlr(Phone phone);
+    HlrId sendHlr(Phone phone, String token);
 
-    <T extends Collection<Phone>> List<HlrId> sendHlrs(T phones);
+    <T extends Collection<Phone>> List<HlrId> sendHlrs(T phones, String token);
 
-    Hlr getHlrInfo(HlrId id);
+    Hlr getHlrInfo(HlrId id, String token);
 
 }

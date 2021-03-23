@@ -55,6 +55,8 @@ public class HlrBot extends AbstractTelegramBot {
         final User user = message.getFrom();
         log.info("Oh, hi: {}, with id: {}", user.getUserName(), user.getId());
 
+        sendSimpleMessage(user.getId(), "\uD83D\uDCB0");
+
         final BotUser botUser = botUserService.findBotUser(user).orElseGet(() -> botUserService.addUser(user));
         final UserState state = botUser.getState();
 

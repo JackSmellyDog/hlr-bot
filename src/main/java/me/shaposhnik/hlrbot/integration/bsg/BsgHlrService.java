@@ -2,10 +2,7 @@ package me.shaposhnik.hlrbot.integration.bsg;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HlrInfo;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HlrResponse;
-import me.shaposhnik.hlrbot.integration.bsg.dto.HrlRequest;
-import me.shaposhnik.hlrbot.integration.bsg.dto.MultipleHlrResponse;
+import me.shaposhnik.hlrbot.integration.bsg.dto.*;
 import me.shaposhnik.hlrbot.model.*;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
@@ -25,20 +22,20 @@ public class BsgHlrService implements HlrService {
     private final BsgApiClient api;
 
     @Override
-    public HlrId sendHlr(Phone phone) {
+    public HlrId sendHlr(Phone phone, String token) {
         final HrlRequest request = mapPhoneToHrlRequest(phone);
-        final HlrResponse hlrResponse = api.sendHlr(request);
+        final HlrResponse hlrResponse = api.sendHlr(request, ApiKey.of(token));
 
         return HlrId.of(hlrResponse.getId());
     }
 
     @Override
-    public <T extends Collection<Phone>> List<HlrId> sendHlrs(T phones) {
+    public <T extends Collection<Phone>> List<HlrId> sendHlrs(T phones, String token) {
         final List<HrlRequest> hrlRequests = phones.stream()
             .map(this::mapPhoneToHrlRequest)
             .collect(Collectors.toList());
 
-        final MultipleHlrResponse multipleHlrResponse = api.sendHlrs(hrlRequests);
+        final MultipleHlrResponse multipleHlrResponse = api.sendHlrs(hrlRequests, ApiKey.of(token));
 
         return multipleHlrResponse.getResult().stream()
             .map(HlrResponse::getId)
@@ -47,8 +44,8 @@ public class BsgHlrService implements HlrService {
     }
 
     @Override
-    public Hlr getHlrInfo(HlrId hlrId) {
-        final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId());
+    public Hlr getHlrInfo(HlrId hlrId, String token) {
+        final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), ApiKey.of(token));
 
         return mapHlrInfoToHlr(hlrInfo);
     }
