@@ -1,24 +1,38 @@
 package me.shaposhnik.hlrbot.bot.enums;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 
 @Getter
-@RequiredArgsConstructor
 public enum Command {
     START("/start"),
-    HLR("/hlr"),
-    STATUS("/status"),
-    STOP("/stop");
+    HLR("/hlr", "\uD83E\uDD84", "HLR"),
+    BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
+    MENU("/menu", "\uD83C\uDFD8", "Menu");
 
-    private final String telegramCommand;
+    Command(String asCommand, String emoji, String buttonAlias) {
+        this.emoji = emoji;
+        this.asCommand = asCommand;
+        this.buttonAlias = buttonAlias;
+    }
+
+    Command(String asCommand) {
+        this(asCommand, "", "");
+    }
+
+    public String asButton() {
+        return String.format("%s %s", emoji, buttonAlias);
+    }
+
+    private final String emoji;
+    private final String asCommand;
+    private final String buttonAlias;
 
     public static Optional<Command> fromString(String text) {
         return Stream.of(values())
-            .filter(value -> value.telegramCommand.equalsIgnoreCase(text))
+            .filter(value -> value.asCommand.equalsIgnoreCase(text))
             .findFirst();
     }
 }

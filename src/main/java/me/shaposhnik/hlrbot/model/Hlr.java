@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class Hlr {
-    private String id;
+    private String providerId;
     private String number;
     private String network;
     private String status;
-    
+
     private Ported ported;
     private Roaming roaming;
 

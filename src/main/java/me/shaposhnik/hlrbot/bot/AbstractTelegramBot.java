@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
@@ -38,5 +39,24 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error("Something went wrong while sending message with html", e);
         }
+    }
+
+    public void sendMessageWithButtons(String chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
+        try {
+            SendMessage sendMessage = SendMessage.builder()
+                .parseMode(ParseMode.MARKDOWN)
+                .text(text)
+                .chatId(chatId)
+                .replyMarkup(replyKeyboardMarkup)
+                .build();
+
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Something went wrong while sending message with buttons", e);
+        }
+    }
+
+    public void sendMessageWithButtons(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
+        sendMessageWithButtons(Long.toString(chatId), text, replyKeyboardMarkup);
     }
 }

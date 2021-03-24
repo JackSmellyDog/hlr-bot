@@ -12,6 +12,10 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+
+import java.util.List;
 
 import static me.shaposhnik.hlrbot.bot.enums.Command.*;
 import static me.shaposhnik.hlrbot.model.enums.UserState.*;
@@ -55,7 +59,7 @@ public class HlrBot extends AbstractTelegramBot {
         final User user = message.getFrom();
         log.info("Oh, hi: {}, with id: {}", user.getUserName(), user.getId());
 
-        sendSimpleMessage(user.getId(), "\uD83D\uDCB0");
+        sendMessageWithButtons(user.getId(), "test", createReplyKeyboardMarkup());
 
         final BotUser botUser = botUserService.findBotUser(user).orElseGet(() -> botUserService.addUser(user));
         final UserState state = botUser.getState();
@@ -103,19 +107,32 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setState(SENDING_NUMBERS);
             botUserService.update(botUser);
 
-        } else if (command == STOP) {
+        } else if (command == MENU) {
 
             botUser.setState(ACTIVE);
             botUserService.update(botUser);
 
         } else if (command == START) {
             sendSimpleMessage(botUser.getTelegramId(), "Give me your token!");
-        } else if (command == STATUS) {
+        } else if (command == BALANCE) {
             sendSimpleMessage(botUser.getTelegramId(), "Status command!");
         } else {
             throw new IllegalStateException("Unhandled command is present");
         }
 
+    }
+
+    private ReplyKeyboardMarkup createReplyKeyboardMarkup() {
+        KeyboardRow menuRow = new KeyboardRow();
+        menuRow.add(MENU.asButton());
+
+        KeyboardRow mainRow = new KeyboardRow();
+        mainRow.addAll(List.of(HLR.asButton(), BALANCE.asButton()));
+
+        return ReplyKeyboardMarkup.builder()
+            .keyboard(List.of(mainRow, menuRow))
+            .resizeKeyboard(true)
+            .build();
     }
 
 

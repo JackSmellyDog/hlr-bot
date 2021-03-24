@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.integration.bsg.dto.*;
+import me.shaposhnik.hlrbot.integration.bsg.exception.BsgApiException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.BsgException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
 import okhttp3.*;
@@ -19,6 +20,7 @@ import java.util.*;
 public class BsgApiClient {
     private static final String ROOT_HLR_LINK = "https://app.bsg.hk/rest/hlr/";
     private static final String CREATE_HLR_LINK = ROOT_HLR_LINK + "create";
+    private static final String BALANCE_LINK = ROOT_HLR_LINK + "common/balance";
     private static final MediaType JSON = MediaType.get("application/json");
     private static final String X_API_KEY = "X-API-KEY";
 
@@ -75,6 +77,29 @@ public class BsgApiClient {
         }
     }
 
+    public BalanceResponse checkBalance(ApiKey apiKey) {
+        Request request = new Request.Builder()
+            .url(BALANCE_LINK)
+            .header(X_API_KEY, apiKey.getKey())
+            .get()
+            .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                final String message = String.format("Response was unsuccessful or body was null! Code: %d", response.code());
+                throw new BsgException(message);
+            }
+
+            return mapOkHttpResponseBodyToBalanceResponse(response.body());
+
+        } catch (BsgException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Something unexpected happened! Message: {}", e.getMessage());
+            throw new BsgException(e);
+        }
+    }
+
     private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests, ApiKey apiKey) {
         try {
             final String payload = objectMapper.writeValueAsString(hrlRequests);
@@ -108,10 +133,41 @@ public class BsgApiClient {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
             log.error("Can't deserialize to HlrInfo: ({})", originalResponseBody);
 
+            mapStringToApiError(originalResponseBody).ifPresent(apiError -> {
+                throw new BsgApiException(apiError);
+            });
+
             throw new UnknownHlrInfoResponseException(originalResponseBody, e);
         } catch (Exception e) {
             log.error("Something went wrong when deserialize to HlrInfo!");
             throw new BsgException(e);
+        }
+    }
+
+    private BalanceResponse mapOkHttpResponseBodyToBalanceResponse(ResponseBody responseBody) {
+        try {
+            return objectMapper.readValue(responseBody.string(), BalanceResponse.class);
+        } catch (JsonProcessingException e) {
+            final String originalResponseBody = (String) e.getLocation().getSourceRef();
+            log.error("Can't deserialize to BalanceResponse: ({})", originalResponseBody);
+
+            mapStringToApiError(originalResponseBody).ifPresent(apiError -> {
+                throw new BsgApiException(apiError);
+            });
+
+            throw new UnknownHlrInfoResponseException(originalResponseBody, e);
+        } catch (Exception e) {
+            log.error("Something went wrong when deserialize to HlrInfo!");
+            throw new BsgException(e);
+        }
+    }
+
+    private Optional<ApiError> mapStringToApiError(String value) {
+        try {
+            return Optional.of(objectMapper.readValue(value, ApiError.class));
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to map: {} to ApiError", value);
+            return Optional.empty();
         }
     }
 

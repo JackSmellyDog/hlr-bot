@@ -6,6 +6,8 @@ import me.shaposhnik.hlrbot.integration.bsg.dto.*;
 import me.shaposhnik.hlrbot.model.*;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
+import me.shaposhnik.hlrbot.persistence.entity.HlrEntity;
+import me.shaposhnik.hlrbot.persistence.repository.HlrEntityRepository;
 import me.shaposhnik.hlrbot.service.HlrService;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BsgHlrService implements HlrService {
     private final BsgApiClient api;
+    private final HlrEntityRepository repository;
 
     @Override
     public HlrId sendHlr(Phone phone, String token) {
@@ -50,6 +53,16 @@ public class BsgHlrService implements HlrService {
         return mapHlrInfoToHlr(hlrInfo);
     }
 
+    @Override
+    public void save(HlrEntity hlr) {
+        repository.save(hlr);
+    }
+
+    @Override
+    public HlrEntity retrieveHlrByProviderId(String providerId) {
+        return repository.findByProviderId(providerId).orElseThrow(RuntimeException::new);
+    }
+
     private Hlr mapHlrInfoToHlr(HlrInfo hlrInfo) {
         final Ported ported = Optional.ofNullable(hlrInfo.getDetails())
             .map(HlrInfo.Details::getPorted)
@@ -62,7 +75,7 @@ public class BsgHlrService implements HlrService {
             .orElse(Roaming.UNKNOWN);
 
         return Hlr.builder()
-            .id(hlrInfo.getId())
+            .providerId(hlrInfo.getId())
             .number(hlrInfo.getMsisdn())
             .network(hlrInfo.getNetwork())
             .status(hlrInfo.getStatus())
