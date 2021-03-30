@@ -88,7 +88,7 @@ public class BsgHlrService implements HlrService {
 
     private HrlRequest mapPhoneToHrlRequest(Phone phone) {
         return HrlRequest.builder()
-            .msisdn(phone.getNumber())
+            .msisdn(phone.getFilteredNumber())
             .reference(generateReference())
             .build();
     }

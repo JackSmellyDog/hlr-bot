@@ -18,9 +18,10 @@ import java.util.*;
 @Component
 @RequiredArgsConstructor
 public class BsgApiClient {
-    private static final String ROOT_HLR_LINK = "https://app.bsg.hk/rest/hlr/";
-    private static final String CREATE_HLR_LINK = ROOT_HLR_LINK + "create";
-    private static final String BALANCE_LINK = ROOT_HLR_LINK + "common/balance";
+    private static final String ROOT_LINK = "https://app.bsg.hk/rest";
+    private static final String REQUEST_HLR_INFO_LINK = ROOT_LINK + "/hlr/";
+    private static final String CREATE_HLR_LINK = ROOT_LINK + "/hlr/create";
+    private static final String BALANCE_LINK = ROOT_LINK + "/common/balance";
     private static final MediaType JSON = MediaType.get("application/json");
     private static final String X_API_KEY = "X-API-KEY";
 
@@ -56,7 +57,7 @@ public class BsgApiClient {
 
     public HlrInfo getHlrInfo(String id, ApiKey apiKey) {
         Request request = new Request.Builder()
-            .url(ROOT_HLR_LINK + id)
+            .url(REQUEST_HLR_INFO_LINK + id)
             .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
@@ -149,6 +150,7 @@ public class BsgApiClient {
             return objectMapper.readValue(responseBody.string(), BalanceResponse.class);
         } catch (JsonProcessingException e) {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
+
             log.error("Can't deserialize to BalanceResponse: ({})", originalResponseBody);
 
             mapStringToApiError(originalResponseBody).ifPresent(apiError -> {
@@ -166,6 +168,7 @@ public class BsgApiClient {
         try {
             return Optional.of(objectMapper.readValue(value, ApiError.class));
         } catch (JsonProcessingException e) {
+
             log.warn("Failed to map: {} to ApiError", value);
             return Optional.empty();
         }

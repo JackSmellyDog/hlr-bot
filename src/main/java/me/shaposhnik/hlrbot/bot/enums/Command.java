@@ -31,8 +31,10 @@ public enum Command {
     private final String buttonAlias;
 
     public static Optional<Command> fromString(String text) {
+
         return Stream.of(values())
-            .filter(value -> value.asCommand.equalsIgnoreCase(text))
+            .filter(value -> value.asCommand.equalsIgnoreCase(text) || value.asButton().equalsIgnoreCase(text))
             .findFirst();
     }
+
 }
