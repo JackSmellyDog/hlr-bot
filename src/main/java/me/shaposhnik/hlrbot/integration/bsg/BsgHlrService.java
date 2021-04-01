@@ -81,8 +81,9 @@ public class BsgHlrService implements HlrService {
             .status(hlrInfo.getStatus())
             .ported(ported)
             .roaming(roaming)
-            .createdAt(hlrInfo.getCreatedDatetime().toLocalDateTime())
-            .statusReceivedAt(hlrInfo.getStatusDatetime().toLocalDateTime())
+            .createdAt(hlrInfo.getCreatedDatetime())
+            .statusReceivedAt(hlrInfo.getStatusDatetime())
+            .otherProperties(hlrInfo.getOtherProperties())
             .build();
     }
 

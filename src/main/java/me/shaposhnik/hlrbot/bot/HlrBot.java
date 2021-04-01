@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
 import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
+import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
 import me.shaposhnik.hlrbot.model.AccountBalance;
 import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.HlrId;
@@ -14,9 +15,8 @@ import me.shaposhnik.hlrbot.persistence.entity.BotUser;
 import me.shaposhnik.hlrbot.service.ApiKeyValidationService;
 import me.shaposhnik.hlrbot.service.BotUserService;
 import me.shaposhnik.hlrbot.service.HlrService;
-import org.jetbrains.annotations.NotNull;
+import me.shaposhnik.hlrbot.util.JsonToYamlConverter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -41,6 +41,7 @@ public class HlrBot extends AbstractTelegramBot {
     private final HlrService hlrService;
     private final BsgAccountService accountService;
     private final ApiKeyValidationService apiKeyValidationService;
+    private final JsonToYamlConverter jsonToYamlConverter;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -65,7 +66,7 @@ public class HlrBot extends AbstractTelegramBot {
             handleIncomeMessage(message);
 
         } else {
-            log.warn("Update has no message. Update: ({})", update);
+            log.info("Update has no message. Update: ({})", update);
         }
     }
 
@@ -103,10 +104,10 @@ public class HlrBot extends AbstractTelegramBot {
             });
     }
 
-    @Async
-    protected void checkHlrStatuses(List<HlrId> hlrIds, BotUser botUser) {
+    // TODO: 4/2/21 to HlrService
+    private void checkHlrStatuses(List<HlrId> hlrIds, BotUser botUser) {
         try {
-            Thread.sleep(15_000);
+            Thread.sleep(5_000);
 
             final String message = hlrIds.stream()
                 .map(hlrId -> hlrService.getHlrInfo(hlrId, botUser.getApiKey()))
@@ -114,6 +115,9 @@ public class HlrBot extends AbstractTelegramBot {
                 .collect(Collectors.joining("\n"));
 
             sendMessageWithButtons(botUser.getTelegramId(), message, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+
+        } catch (UnknownHlrInfoResponseException e) {
+            sendMessageWithButtons(botUser.getTelegramId(), jsonToYamlConverter.convert(e.getUnknownResponse()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
         } catch (Exception e) {
             log.error("Failed to check hlr statues!", e);
@@ -177,7 +181,6 @@ public class HlrBot extends AbstractTelegramBot {
             .build();
     }
 
-    @NotNull
     private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
         KeyboardRow row = new KeyboardRow();
         commandList.stream()

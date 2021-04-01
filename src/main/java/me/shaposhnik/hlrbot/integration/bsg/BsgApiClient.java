@@ -68,7 +68,13 @@ public class BsgApiClient {
                 throw new BsgException(message);
             }
 
-            return mapOkHttpResponseBodyToHlrInfo(response.body());
+            final HlrInfo hlrInfo = mapOkHttpResponseBodyToHlrInfo(response.body());
+
+            if (hlrInfo.getError() != 0) {
+                throw new BsgApiException(new ApiError(hlrInfo.getError(), hlrInfo.getErrorDescription()));
+            }
+
+            return hlrInfo;
 
         } catch (BsgException e) {
             throw e;
@@ -134,10 +140,6 @@ public class BsgApiClient {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
             log.error("Can't deserialize to HlrInfo: ({})", originalResponseBody);
 
-            mapStringToApiError(originalResponseBody).ifPresent(apiError -> {
-                throw new BsgApiException(apiError);
-            });
-
             throw new UnknownHlrInfoResponseException(originalResponseBody, e);
         } catch (Exception e) {
             log.error("Something went wrong when deserialize to HlrInfo!");
@@ -157,9 +159,9 @@ public class BsgApiClient {
                 throw new BsgApiException(apiError);
             });
 
-            throw new UnknownHlrInfoResponseException(originalResponseBody, e);
+            throw new BsgException(e);
         } catch (Exception e) {
-            log.error("Something went wrong when deserialize to HlrInfo!");
+            log.error("Something went wrong when deserialize to BalanceResponse!");
             throw new BsgException(e);
         }
     }

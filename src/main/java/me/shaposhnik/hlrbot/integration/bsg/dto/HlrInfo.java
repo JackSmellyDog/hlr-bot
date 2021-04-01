@@ -1,14 +1,26 @@
 package me.shaposhnik.hlrbot.integration.bsg.dto;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class HlrInfo {
+    private static final String ZONED_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssz";
+
+    private int error;
+    private String errorDescription;
+
     private String id;
     private String reference;
     private String msisdn;
@@ -16,10 +28,19 @@ public class HlrInfo {
     private String status;
     private Details details;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssz")
+    @Getter(onMethod_ = {@JsonAnyGetter})
+    @Setter(AccessLevel.NONE)
+    private Map<String, String> otherProperties = new HashMap<>();
+
+    @JsonAnySetter
+    public void add(String key, String value) {
+        otherProperties.put(key, value);
+    }
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
     private ZonedDateTime createdDatetime;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssz")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
     private ZonedDateTime statusDatetime;
 
     @Getter
@@ -29,13 +50,4 @@ public class HlrInfo {
         private String roaming;
     }
 
-    @Override
-    public String toString() {
-        return "ID     :" + '\n' + id +
-            "MSISDN :" + '\n' + msisdn +
-            "NETWORK:" + '\n' + network +
-            "STATUS :" + '\n' + status +
-            "PORTED :" + '\n' + details.ported +
-            "ROAMING:" + '\n' + details.roaming;
-    }
 }
