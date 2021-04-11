@@ -28,6 +28,12 @@ public class HlrInfo {
     private String status;
     private Details details;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
+    private ZonedDateTime createdDatetime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
+    private ZonedDateTime statusDatetime;
+
     @Getter(onMethod_ = {@JsonAnyGetter})
     @Setter(AccessLevel.NONE)
     private Map<String, String> otherProperties = new HashMap<>();
@@ -37,17 +43,20 @@ public class HlrInfo {
         otherProperties.put(key, value);
     }
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
-    private ZonedDateTime createdDatetime;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
-    private ZonedDateTime statusDatetime;
-
     @Getter
     @Setter
     public static class Details {
         private String ported;
         private String roaming;
+
+        @Getter(onMethod_ = {@JsonAnyGetter})
+        @Setter(AccessLevel.NONE)
+        private Map<String, String> otherDetails = new HashMap<>();
+
+        @JsonAnySetter
+        public void add(String key, String value) {
+            otherDetails.put(key, value);
+        }
     }
 
 }

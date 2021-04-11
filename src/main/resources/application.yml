@@ -1,4 +1,3 @@
-
 spring:
   datasource:
     url: jdbc:h2:file:./data/hlr-bot
@@ -11,10 +10,6 @@ spring:
       ddl-auto: update
     properties.hibernate.jdbc.lob.non_contextual_creation: true
 
-
-telegram-bot:
-  name:
-  token:
 
 integration:
   bsg:

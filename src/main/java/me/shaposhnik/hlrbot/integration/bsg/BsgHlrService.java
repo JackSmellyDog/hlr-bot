@@ -3,26 +3,34 @@ package me.shaposhnik.hlrbot.integration.bsg;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.integration.bsg.dto.*;
-import me.shaposhnik.hlrbot.model.*;
+import me.shaposhnik.hlrbot.integration.bsg.properties.HlrInfoSettings;
+import me.shaposhnik.hlrbot.integration.bsg.properties.HlrStatuses;
+import me.shaposhnik.hlrbot.model.Hlr;
+import me.shaposhnik.hlrbot.model.HlrId;
+import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
 import me.shaposhnik.hlrbot.persistence.entity.HlrEntity;
 import me.shaposhnik.hlrbot.persistence.repository.HlrEntityRepository;
-import me.shaposhnik.hlrbot.service.HlrService;
+import me.shaposhnik.hlrbot.service.HlrAsyncService;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BsgHlrService implements HlrService {
+public class BsgHlrService implements HlrAsyncService {
+
     private final BsgApiClient api;
     private final HlrEntityRepository repository;
+    private final HlrStatuses hlrStatuses;
+    private final HlrInfoSettings hlrInfoSettings;
 
     @Override
     public HlrId sendHlr(Phone phone, String token) {
@@ -51,6 +59,23 @@ public class BsgHlrService implements HlrService {
         final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), ApiKey.of(token));
 
         return mapHlrInfoToHlr(hlrInfo);
+    }
+
+    @Override
+    public CompletableFuture<Hlr> getHlrInfoAsync(HlrId hlrId, String token) {
+        final ApiKey apiKey = ApiKey.of(token);
+
+        HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), apiKey);
+
+        int triesCounter = 0;
+        while (triesCounter < hlrInfoSettings.getLimit() && (hlrInfo.getStatus() == null || !hlrStatuses.getFinalized().contains(hlrInfo.getStatus()))) {
+            sleep(hlrInfoSettings.getPause());
+            hlrInfo = api.getHlrInfo(hlrId.getId(), apiKey);
+
+            triesCounter++;
+        }
+
+        return CompletableFuture.completedFuture(mapHlrInfoToHlr(hlrInfo));
     }
 
     @Override
@@ -96,5 +121,14 @@ public class BsgHlrService implements HlrService {
 
     private String generateReference() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 13);
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            log.error("I can't sleep!!!", e);
+            Thread.currentThread().interrupt();
+        }
     }
 }

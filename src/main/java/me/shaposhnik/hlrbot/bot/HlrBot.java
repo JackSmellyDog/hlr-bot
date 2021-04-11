@@ -7,14 +7,13 @@ import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
 import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
 import me.shaposhnik.hlrbot.model.AccountBalance;
-import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.HlrId;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.model.enums.UserState;
 import me.shaposhnik.hlrbot.persistence.entity.BotUser;
 import me.shaposhnik.hlrbot.service.ApiKeyValidationService;
 import me.shaposhnik.hlrbot.service.BotUserService;
-import me.shaposhnik.hlrbot.service.HlrService;
+import me.shaposhnik.hlrbot.service.HlrAsyncService;
 import me.shaposhnik.hlrbot.util.JsonToYamlConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -36,9 +35,12 @@ import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 @RequiredArgsConstructor
 public class HlrBot extends AbstractTelegramBot {
     private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(List.of(HLR, BALANCE), List.of(MENU));
+    private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
+    private static final String TOKEN_ACCEPTED_MESSAGE = "Api Key has been accepted!";
+    private static final String NUMBER_FOR_HLR_REQUIRED = "Send me the number you want to hlr!";
 
     private final BotUserService botUserService;
-    private final HlrService hlrService;
+    private final HlrAsyncService hlrService;
     private final BsgAccountService accountService;
     private final ApiKeyValidationService apiKeyValidationService;
     private final JsonToYamlConverter jsonToYamlConverter;
@@ -104,17 +106,17 @@ public class HlrBot extends AbstractTelegramBot {
             });
     }
 
-    // TODO: 4/2/21 to HlrService
     private void checkHlrStatuses(List<HlrId> hlrIds, BotUser botUser) {
         try {
-            Thread.sleep(5_000);
 
-            final String message = hlrIds.stream()
-                .map(hlrId -> hlrService.getHlrInfo(hlrId, botUser.getApiKey()))
-                .map(Hlr::toString)
-                .collect(Collectors.joining("\n"));
-
-            sendMessageWithButtons(botUser.getTelegramId(), message, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey())
+                .whenComplete((result, error) -> {
+                    if (result != null) {
+                        sendMessageWithButtons(botUser.getTelegramId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    } else {
+                        log.error("Error!", error);
+                    }
+                });
 
         } catch (UnknownHlrInfoResponseException e) {
             sendMessageWithButtons(botUser.getTelegramId(), jsonToYamlConverter.convert(e.getUnknownResponse()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
@@ -131,10 +133,10 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setApiKey(message.getText());
             botUserService.update(botUser);
 
-            sendMessageWithButtons(botUser.getTelegramId(), "Api Key has been accepted!", createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getTelegramId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
         } else {
-            sendSimpleMessage(botUser.getTelegramId(), "Give me your token!");
+            sendSimpleMessage(botUser.getTelegramId(), TOKEN_REQUIRED_MESSAGE);
         }
     }
 
@@ -145,7 +147,7 @@ public class HlrBot extends AbstractTelegramBot {
 
     private void handleIncomeCommand(Command command, BotUser botUser) {
         if (command == HLR) {
-            sendMessageWithButtons(botUser.getTelegramId(), "Send me the number you want to hlr!", createReplyKeyboardMarkup(List.of()));
+            sendMessageWithButtons(botUser.getTelegramId(), NUMBER_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_NUMBERS);
             botUserService.update(botUser);
@@ -156,7 +158,7 @@ public class HlrBot extends AbstractTelegramBot {
             botUserService.update(botUser);
 
         } else if (command == START) {
-            sendSimpleMessage(botUser.getTelegramId(), "Give me your token!");
+            sendSimpleMessage(botUser.getTelegramId(), TOKEN_REQUIRED_MESSAGE);
         } else if (command == BALANCE) {
             AccountBalance accountBalance = accountService.checkBalance(ApiKey.of(botUser.getApiKey()));
 
@@ -183,9 +185,7 @@ public class HlrBot extends AbstractTelegramBot {
 
     private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
         KeyboardRow row = new KeyboardRow();
-        commandList.stream()
-            .map(Command::asButton)
-            .forEach(row::add);
+        commandList.stream().map(Command::asButton).forEach(row::add);
 
         return row;
     }
