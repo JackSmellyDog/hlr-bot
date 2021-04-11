@@ -13,4 +13,15 @@ spring:
 
 integration:
   bsg:
-    x-api-key:
+    hlr-statuses:
+      finalized:
+        - absent
+        - active
+        - barred
+        - failed
+        - unknown
+      pending:
+        - sent
+    async-hlr-info:
+      limit: 10
+      pause: 1000
