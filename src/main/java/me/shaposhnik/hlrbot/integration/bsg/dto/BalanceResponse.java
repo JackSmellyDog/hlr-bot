@@ -10,7 +10,10 @@ import lombok.ToString;
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BalanceResponse {
-    private Double amount;
+    private int error;
+    private String errorDescription;
+
+    private String amount;
     private String currency;
     private int limit;
 }

@@ -22,7 +22,7 @@ public class BsgApiClient {
     private static final String REQUEST_HLR_INFO_LINK = ROOT_LINK + "/hlr/";
     private static final String CREATE_HLR_LINK = ROOT_LINK + "/hlr/create";
     private static final String BALANCE_LINK = ROOT_LINK + "/common/balance";
-    private static final MediaType JSON = MediaType.get("application/json");
+    private static final MediaType APPLICATION_JSON = MediaType.get("application/json");
     private static final String X_API_KEY = "X-API-KEY";
 
     private final OkHttpClient client;
@@ -45,6 +45,7 @@ public class BsgApiClient {
         }
     }
 
+    // TODO: 4/13/21 rewrite with multipart data
     public HlrResponse sendHlr(HrlRequest hrlRequest, ApiKey apiKey) {
         final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
 
@@ -68,13 +69,7 @@ public class BsgApiClient {
                 throw new BsgException(message);
             }
 
-            final HlrInfo hlrInfo = mapOkHttpResponseBodyToHlrInfo(response.body());
-
-            if (hlrInfo.getError() != 0) {
-                throw new BsgApiException(new ApiError(hlrInfo.getError(), hlrInfo.getErrorDescription()));
-            }
-
-            return hlrInfo;
+            return mapOkHttpResponseBodyToHlrInfo(response.body());
 
         } catch (BsgException e) {
             throw e;
@@ -110,7 +105,7 @@ public class BsgApiClient {
     private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests, ApiKey apiKey) {
         try {
             final String payload = objectMapper.writeValueAsString(hrlRequests);
-            final RequestBody requestBody = RequestBody.create(payload, JSON);
+            final RequestBody requestBody = RequestBody.create(payload, APPLICATION_JSON);
 
             return new Request.Builder()
                 .url(CREATE_HLR_LINK)

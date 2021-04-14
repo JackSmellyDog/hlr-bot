@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 public enum Command {
     START("/start"),
     HLR("/hlr", "\uD83E\uDD84", "HLR"),
+    ID("/id", "\uD83D\uDD0D", "ID"),
     BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
     MENU("/menu", "\uD83C\uDFD8", "Menu");
 

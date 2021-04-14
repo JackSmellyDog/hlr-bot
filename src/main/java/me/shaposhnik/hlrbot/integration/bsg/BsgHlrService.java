@@ -22,6 +22,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.NO_ERRORS;
+import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.fromErrorCode;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class BsgHlrService implements HlrAsyncService {
 
     private final BsgApiClient api;
     private final HlrEntityRepository repository;
+    private final BsgApiErrorHandler bsgApiErrorHandler;
     private final HlrStatuses hlrStatuses;
     private final HlrInfoSettings hlrInfoSettings;
 
@@ -36,6 +40,7 @@ public class BsgHlrService implements HlrAsyncService {
     public HlrId sendHlr(Phone phone, String token) {
         final HrlRequest request = mapPhoneToHrlRequest(phone);
         final HlrResponse hlrResponse = api.sendHlr(request, ApiKey.of(token));
+        bsgApiErrorHandler.handle(fromErrorCode(hlrResponse.getError()));
 
         return HlrId.of(hlrResponse.getId());
     }
@@ -47,6 +52,12 @@ public class BsgHlrService implements HlrAsyncService {
             .collect(Collectors.toList());
 
         final MultipleHlrResponse multipleHlrResponse = api.sendHlrs(hrlRequests, ApiKey.of(token));
+        bsgApiErrorHandler.handle(fromErrorCode(multipleHlrResponse.getError()));
+
+        multipleHlrResponse.getResult().stream()
+            .filter(hlrResponse -> fromErrorCode(hlrResponse.getError()) != NO_ERRORS)
+            .findAny()
+            .ifPresent(hlrResponse -> bsgApiErrorHandler.handle(fromErrorCode(hlrResponse.getError())));
 
         return multipleHlrResponse.getResult().stream()
             .map(HlrResponse::getId)
@@ -57,6 +68,7 @@ public class BsgHlrService implements HlrAsyncService {
     @Override
     public Hlr getHlrInfo(HlrId hlrId, String token) {
         final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), ApiKey.of(token));
+        bsgApiErrorHandler.handle(fromErrorCode(hlrInfo.getError()));
 
         return mapHlrInfoToHlr(hlrInfo);
     }

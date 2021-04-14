@@ -7,8 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-public class AccountBalance {
-    private Double amount;
+public class Balance {
+    private String amount;
     private String currency;
     private int limit;
 

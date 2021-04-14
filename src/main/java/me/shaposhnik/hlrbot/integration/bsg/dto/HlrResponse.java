@@ -12,7 +12,7 @@ import lombok.ToString;
 public class HlrResponse {
     private String id;
     private String reference;
-    private String error;
+    private int error;
     private String price;
     private String currency;
 }

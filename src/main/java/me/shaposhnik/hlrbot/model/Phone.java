@@ -17,7 +17,7 @@ public class Phone {
             return List.of();
         }
 
-        return Stream.of(text.split(",:\n"))
+        return Stream.of(text.split(",:;\n"))
             .map(Phone::of)
             .collect(Collectors.toList());
     }

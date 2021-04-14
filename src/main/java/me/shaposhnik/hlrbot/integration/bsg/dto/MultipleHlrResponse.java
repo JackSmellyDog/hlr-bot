@@ -12,6 +12,6 @@ import java.util.List;
 public class MultipleHlrResponse {
     private List<HlrResponse> result;
     private String totalprice;
-    private String error;
+    private int error;
     private String currency;
 }

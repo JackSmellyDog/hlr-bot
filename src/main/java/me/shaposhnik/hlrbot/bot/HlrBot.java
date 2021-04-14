@@ -3,18 +3,17 @@ package me.shaposhnik.hlrbot.bot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
+import me.shaposhnik.hlrbot.exception.BaseException;
 import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
-import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
-import me.shaposhnik.hlrbot.model.AccountBalance;
+import me.shaposhnik.hlrbot.model.Balance;
+import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.HlrId;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.model.enums.UserState;
 import me.shaposhnik.hlrbot.persistence.entity.BotUser;
-import me.shaposhnik.hlrbot.service.ApiKeyValidationService;
 import me.shaposhnik.hlrbot.service.BotUserService;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
-import me.shaposhnik.hlrbot.util.JsonToYamlConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -34,16 +33,16 @@ import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 @Component
 @RequiredArgsConstructor
 public class HlrBot extends AbstractTelegramBot {
-    private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(List.of(HLR, BALANCE), List.of(MENU));
+    private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(List.of(HLR, ID, BALANCE), List.of(MENU));
+
     private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
     private static final String TOKEN_ACCEPTED_MESSAGE = "Api Key has been accepted!";
     private static final String NUMBER_FOR_HLR_REQUIRED = "Send me the number you want to hlr!";
+    private static final String ID_FOR_HLR_REQUIRED = "Send me the ID of previous HLR request!";
 
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
     private final BsgAccountService accountService;
-    private final ApiKeyValidationService apiKeyValidationService;
-    private final JsonToYamlConverter jsonToYamlConverter;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -88,46 +87,63 @@ public class HlrBot extends AbstractTelegramBot {
         } else if (state == SENDING_NUMBERS) {
             handleSendingNumbersState(message, botUser);
 
+        } else if (state == SENDING_ID) {
+            handleSendingIdState(message, botUser);
         } else {
             throw new IllegalStateException("Unhandled state is present");
         }
 
     }
 
-    private void handleSendingNumbersState(Message message, BotUser botUser) {
+    // TODO: 4/15/21 Refactor this crap
+    private void handleSendingIdState(Message message, BotUser botUser) {
         Command.fromString(message.getText())
             .filter(command -> command == MENU)
             .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
-                List<HlrId> hlrIds = hlrService.sendHlrs(Phone.fromString(message.getText()), botUser.getApiKey());
-                checkHlrStatuses(hlrIds, botUser);
+
+                try {
+                    Hlr hlrInfo = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
+                    sendMessageWithButtons(botUser.getTelegramId(), hlrInfo.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+
+                } catch (BaseException e) {
+                    sendMessageWithButtons(botUser.getTelegramId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                }
 
                 botUser.setState(ACTIVE);
                 botUserService.update(botUser);
             });
     }
 
-    private void checkHlrStatuses(List<HlrId> hlrIds, BotUser botUser) {
-        try {
+    // TODO: 4/15/21 Refactor this crap
+    private void handleSendingNumbersState(Message message, BotUser botUser) {
+        Command.fromString(message.getText())
+            .filter(command -> command == MENU)
+            .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
 
-            hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey())
-                .whenComplete((result, error) -> {
-                    if (result != null) {
-                        sendMessageWithButtons(botUser.getTelegramId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
-                    } else {
-                        log.error("Error!", error);
-                    }
-                });
+                try {
+                    List<HlrId> hlrIds = hlrService.sendHlrs(Phone.fromString(message.getText()), botUser.getApiKey());
 
-        } catch (UnknownHlrInfoResponseException e) {
-            sendMessageWithButtons(botUser.getTelegramId(), jsonToYamlConverter.convert(e.getUnknownResponse()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey()).whenComplete((result, error) -> {
+                        if (result != null) {
+                            sendMessageWithButtons(botUser.getTelegramId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                        } else if (error instanceof BaseException) {
+                            sendMessageWithButtons(botUser.getTelegramId(), error.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                        } else {
+                            log.error("Error!", error);
+                        }
+                    });
 
-        } catch (Exception e) {
-            log.error("Failed to check hlr statues!", e);
-        }
+                } catch (BaseException e) {
+                    sendMessageWithButtons(botUser.getTelegramId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                }
+
+                botUser.setState(ACTIVE);
+                botUserService.update(botUser);
+            });
     }
 
     private void handleNewState(Message message, BotUser botUser) {
-        if (apiKeyValidationService.isApiKeyValid(ApiKey.of(message.getText()))) {
+        if (accountService.isApiKeyValid(ApiKey.of(message.getText()))) {
 
             botUser.setState(ACTIVE);
             botUser.setApiKey(message.getText());
@@ -152,6 +168,13 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setState(SENDING_NUMBERS);
             botUserService.update(botUser);
 
+        } else if (command == ID) {
+
+            sendMessageWithButtons(botUser.getTelegramId(), ID_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
+
+            botUser.setState(SENDING_ID);
+            botUserService.update(botUser);
+
         } else if (command == MENU) {
 
             botUser.setState(ACTIVE);
@@ -160,9 +183,9 @@ public class HlrBot extends AbstractTelegramBot {
         } else if (command == START) {
             sendSimpleMessage(botUser.getTelegramId(), TOKEN_REQUIRED_MESSAGE);
         } else if (command == BALANCE) {
-            AccountBalance accountBalance = accountService.checkBalance(ApiKey.of(botUser.getApiKey()));
+            Balance balance = accountService.checkBalance(ApiKey.of(botUser.getApiKey()));
 
-            sendMessageWithButtons(botUser.getTelegramId(), accountBalance.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getTelegramId(), balance.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
         } else {
             throw new IllegalStateException("Unhandled command is present");
         }
