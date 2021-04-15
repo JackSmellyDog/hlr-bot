@@ -33,3 +33,4 @@ build/
 /mvnw.cmd
 /.mvn/
 /data/hlr-bot.mv.db
+/logs/
