@@ -6,6 +6,7 @@ import lombok.Setter;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
@@ -21,8 +22,8 @@ public class Hlr {
     private Ported ported;
     private Roaming roaming;
 
-    private ZonedDateTime createdAt;
-    private ZonedDateTime statusReceivedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime statusReceivedAt;
 
     private Map<String, String> otherProperties;
 

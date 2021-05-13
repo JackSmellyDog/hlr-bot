@@ -103,10 +103,10 @@ public class HlrBot extends AbstractTelegramBot {
 
                 try {
                     Hlr hlrInfo = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
-                    sendMessageWithButtons(botUser.getTelegramId(), hlrInfo.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    sendMessageWithButtons(botUser.getId(), hlrInfo.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
                 } catch (BaseException e) {
-                    sendMessageWithButtons(botUser.getTelegramId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    sendMessageWithButtons(botUser.getId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
                 }
 
                 botUser.setState(ACTIVE);
@@ -125,16 +125,16 @@ public class HlrBot extends AbstractTelegramBot {
 
                     hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey()).whenComplete((result, error) -> {
                         if (result != null) {
-                            sendMessageWithButtons(botUser.getTelegramId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                            sendMessageWithButtons(botUser.getId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
                         } else if (error instanceof BaseException) {
-                            sendMessageWithButtons(botUser.getTelegramId(), error.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                            sendMessageWithButtons(botUser.getId(), error.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
                         } else {
                             log.error("Error!", error);
                         }
                     });
 
                 } catch (BaseException e) {
-                    sendMessageWithButtons(botUser.getTelegramId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    sendMessageWithButtons(botUser.getId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
                 }
 
                 botUser.setState(ACTIVE);
@@ -149,10 +149,10 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setApiKey(message.getText());
             botUserService.update(botUser);
 
-            sendMessageWithButtons(botUser.getTelegramId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
         } else {
-            sendSimpleMessage(botUser.getTelegramId(), TOKEN_REQUIRED_MESSAGE);
+            sendSimpleMessage(botUser.getId(), TOKEN_REQUIRED_MESSAGE);
         }
     }
 
@@ -163,14 +163,14 @@ public class HlrBot extends AbstractTelegramBot {
 
     private void handleIncomeCommand(Command command, BotUser botUser) {
         if (command == HLR) {
-            sendMessageWithButtons(botUser.getTelegramId(), NUMBER_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
+            sendMessageWithButtons(botUser.getId(), NUMBER_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_NUMBERS);
             botUserService.update(botUser);
 
         } else if (command == ID) {
 
-            sendMessageWithButtons(botUser.getTelegramId(), ID_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
+            sendMessageWithButtons(botUser.getId(), ID_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_ID);
             botUserService.update(botUser);
@@ -181,11 +181,11 @@ public class HlrBot extends AbstractTelegramBot {
             botUserService.update(botUser);
 
         } else if (command == START) {
-            sendSimpleMessage(botUser.getTelegramId(), TOKEN_REQUIRED_MESSAGE);
+            sendSimpleMessage(botUser.getId(), TOKEN_REQUIRED_MESSAGE);
         } else if (command == BALANCE) {
             Balance balance = accountService.checkBalance(ApiKey.of(botUser.getApiKey()));
 
-            sendMessageWithButtons(botUser.getTelegramId(), balance.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getId(), balance.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
         } else {
             throw new IllegalStateException("Unhandled command is present");
         }

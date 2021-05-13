@@ -14,8 +14,8 @@ public class Balance {
 
     @Override
     public String toString() {
-        return "Amount:" + ' ' + amount + '\n' +
-            "Currency:" + ' ' + currency + '\n' +
-            "Limit:" + ' ' + limit;
+        return "***Amount:*** " + ' ' + amount + '\n' +
+            "***Currency:*** " + ' ' + currency + '\n' +
+            "***Limit:*** " + ' ' + limit;
     }
 }

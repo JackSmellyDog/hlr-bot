@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import me.shaposhnik.hlrbot.util.JsonLocalDateTimeDeserializer;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,7 +18,6 @@ import java.util.Map;
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HlrInfo {
-    private static final String ZONED_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ssz";
 
     private int error;
     private String errorDescription;
@@ -28,11 +29,11 @@ public class HlrInfo {
     private String status;
     private Details details;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
-    private ZonedDateTime createdDatetime;
+    @JsonDeserialize(using = JsonLocalDateTimeDeserializer.class)
+    private LocalDateTime createdDatetime;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = ZONED_DATE_TIME_PATTERN)
-    private ZonedDateTime statusDatetime;
+    @JsonDeserialize(using = JsonLocalDateTimeDeserializer.class)
+    private LocalDateTime statusDatetime;
 
     @Getter(onMethod_ = {@JsonAnyGetter})
     @Setter(AccessLevel.NONE)

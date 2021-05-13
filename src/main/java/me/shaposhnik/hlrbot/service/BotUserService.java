@@ -28,7 +28,7 @@ public class BotUserService {
 
     private BotUser mapTelegramUserToBotUser(User user) {
         return BotUser.builder()
-            .telegramId(user.getId())
+            .id(user.getId())
             .userName(user.getUserName())
             .firstName(user.getFirstName())
             .lastName(user.getLastName())

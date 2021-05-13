@@ -18,7 +18,7 @@ public class BotUser {
 
     @Id
     @Column(unique = true, nullable = false)
-    private Long telegramId;
+    private Long id;
 
     @Column
     @Enumerated(EnumType.STRING)
