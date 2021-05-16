@@ -33,9 +33,14 @@ import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 @Component
 @RequiredArgsConstructor
 public class HlrBot extends AbstractTelegramBot {
-    private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(List.of(HLR, ID, BALANCE), List.of(MENU));
+    private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(
+        List.of(HLR, ID),
+        List.of(BALANCE, CHANGE_API_KEY),
+        List.of(MENU)
+    );
 
     private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
+    private static final String TOKEN_INVALID_MESSAGE = "It's an invalid token. Please send again!";
     private static final String TOKEN_ACCEPTED_MESSAGE = "Api Key has been accepted!";
     private static final String NUMBER_FOR_HLR_REQUIRED = "Send me the number you want to hlr!";
     private static final String ID_FOR_HLR_REQUIRED = "Send me the ID of previous HLR request!";
@@ -89,10 +94,37 @@ public class HlrBot extends AbstractTelegramBot {
 
         } else if (state == SENDING_ID) {
             handleSendingIdState(message, botUser);
+
+        } else if (state == SENDING_API_KEY) {
+            handleSendingApiKeyState(message, botUser);
+
         } else {
             throw new IllegalStateException("Unhandled state is present");
         }
 
+    }
+
+    // TODO: 5/16/21 Refactor this crap
+    private void handleSendingApiKeyState(Message message, BotUser botUser) {
+        Command.fromString(message.getText())
+            .filter(command -> command == MENU)
+            .ifPresentOrElse(
+                command -> handleIncomeCommand(command, botUser),
+                () -> acceptNewToken(message, botUser, TOKEN_INVALID_MESSAGE));
+    }
+
+    private void acceptNewToken(Message message, BotUser botUser, String warningMessageText) {
+        if (accountService.isApiKeyValid(ApiKey.of(message.getText()))) {
+
+            botUser.setState(ACTIVE);
+            botUser.setApiKey(message.getText());
+            botUserService.update(botUser);
+
+            sendMessageWithButtons(botUser.getId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+
+        } else {
+            sendSimpleMessage(botUser.getId(), warningMessageText);
+        }
     }
 
     // TODO: 4/15/21 Refactor this crap
@@ -143,17 +175,7 @@ public class HlrBot extends AbstractTelegramBot {
     }
 
     private void handleNewState(Message message, BotUser botUser) {
-        if (accountService.isApiKeyValid(ApiKey.of(message.getText()))) {
-
-            botUser.setState(ACTIVE);
-            botUser.setApiKey(message.getText());
-            botUserService.update(botUser);
-
-            sendMessageWithButtons(botUser.getId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
-
-        } else {
-            sendSimpleMessage(botUser.getId(), TOKEN_REQUIRED_MESSAGE);
-        }
+        acceptNewToken(message, botUser, TOKEN_REQUIRED_MESSAGE);
     }
 
     private void handleActiveState(Message message, BotUser botUser) {
@@ -178,6 +200,12 @@ public class HlrBot extends AbstractTelegramBot {
         } else if (command == MENU) {
 
             botUser.setState(ACTIVE);
+            botUserService.update(botUser);
+
+        } else if (command == CHANGE_API_KEY) {
+            sendMessageWithButtons(botUser.getId(), TOKEN_REQUIRED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+
+            botUser.setState(SENDING_API_KEY);
             botUserService.update(botUser);
 
         } else if (command == START) {

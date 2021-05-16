@@ -11,6 +11,7 @@ public enum Command {
     HLR("/hlr", "\uD83E\uDD84", "HLR"),
     ID("/id", "\uD83D\uDD0D", "ID"),
     BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
+    CHANGE_API_KEY("/change_api_key", "\uD83D\uDDDD", "Change Api Key"),
     MENU("/menu", "\uD83C\uDFD8", "Menu");
 
     Command(String asCommand, String emoji, String buttonAlias) {

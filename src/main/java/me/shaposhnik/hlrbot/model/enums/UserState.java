@@ -4,5 +4,6 @@ public enum UserState {
     NEW,
     ACTIVE,
     SENDING_NUMBERS,
-    SENDING_ID
+    SENDING_ID,
+    SENDING_API_KEY
 }
