@@ -52,8 +52,17 @@ public class JsonLocalDateTimeDeserializer extends StdDeserializer<LocalDateTime
         } catch (DateTimeParseException e) {
 
             log.warn("Failed to parse with LocalDateTime, try with LocalDate. Message: {}", e.getMessage());
-            return LocalDate.parse(text, MEGA_DATE_TIME_FORMATTER).atStartOfDay();
+            return parseWithLocalDateOrNull(text);
         }
 
+    }
+
+    private LocalDateTime parseWithLocalDateOrNull(String text) {
+        try {
+            return LocalDate.parse(text, MEGA_DATE_TIME_FORMATTER).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            log.warn("Failed to parse with LocalDate. Message: {}", e.getMessage());
+            return null;
+        }
     }
 }

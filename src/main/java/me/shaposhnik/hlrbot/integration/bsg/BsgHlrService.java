@@ -15,10 +15,7 @@ import me.shaposhnik.hlrbot.persistence.repository.HlrEntityRepository;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -111,6 +108,10 @@ public class BsgHlrService implements HlrAsyncService {
             .map(status -> status.equals("1") ? Roaming.YES : Roaming.NO)
             .orElse(Roaming.UNKNOWN);
 
+        final Map<String, String> details = Optional.ofNullable(hlrInfo.getDetails())
+            .map(HlrInfo.Details::getOtherDetails)
+            .orElseGet(Map::of);
+
         return Hlr.builder()
             .providerId(hlrInfo.getId())
             .number(hlrInfo.getMsisdn())
@@ -118,6 +119,7 @@ public class BsgHlrService implements HlrAsyncService {
             .status(hlrInfo.getStatus())
             .ported(ported)
             .roaming(roaming)
+            .details(details)
             .createdAt(hlrInfo.getCreatedDatetime())
             .statusReceivedAt(hlrInfo.getStatusDatetime())
             .otherProperties(hlrInfo.getOtherProperties())

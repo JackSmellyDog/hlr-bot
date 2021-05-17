@@ -7,7 +7,6 @@ import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Getter
@@ -21,6 +20,7 @@ public class Hlr {
 
     private Ported ported;
     private Roaming roaming;
+    private Map<String, String> details;
 
     private LocalDateTime createdAt;
     private LocalDateTime statusReceivedAt;
@@ -29,7 +29,8 @@ public class Hlr {
 
     @Override
     public String toString() {
-        StringBuilder stringBuilder = new StringBuilder()
+
+        StringBuilder mainBuilder = new StringBuilder()
             .append("***ProviderId:*** ").append(providerId).append('\n')
             .append("***Number:*** ").append(number).append('\n')
             .append("***Network:*** ").append(network).append('\n')
@@ -37,12 +38,28 @@ public class Hlr {
             .append("***Ported:*** ").append(ported).append('\n')
             .append("***Roaming:*** ").append(roaming).append('\n')
             .append("***Created at:*** ").append(createdAt).append('\n')
-            .append("***Status received at:*** ").append(statusReceivedAt).append('\n')
-            .append("***Other properties:*** ").append('\n');
+            .append("***Status received at:*** ").append(statusReceivedAt).append('\n');
 
-        otherProperties.forEach((k, v) ->
-            stringBuilder.append("    ***").append(k).append("***").append(": ").append(v).append('\n'));
+        if (!details.isEmpty()) {
+            StringBuilder detailsBuilder = new StringBuilder();
 
-        return stringBuilder.toString();
+            details.forEach((k, v) ->
+                detailsBuilder.append("    ***").append(k).append("***").append(": ").append(v).append('\n'));
+
+            mainBuilder.append("***Details:*** ").append('\n')
+                .append(detailsBuilder);
+        }
+
+        if (!otherProperties.isEmpty()) {
+            StringBuilder otherPropertiesBuilder = new StringBuilder();
+
+            otherProperties.forEach((k, v) ->
+                otherPropertiesBuilder.append("    ***").append(k).append("***").append(": ").append(v).append('\n'));
+
+            mainBuilder.append("***Other properties:*** ").append('\n')
+                .append(otherPropertiesBuilder);
+        }
+
+        return mainBuilder.toString();
     }
 }
