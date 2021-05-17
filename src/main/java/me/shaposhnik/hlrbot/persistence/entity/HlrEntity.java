@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = "bot_user")
+@Table(name = "hlr")
 @DynamicUpdate
 @Getter
 @Setter
