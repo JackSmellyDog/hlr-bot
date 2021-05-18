@@ -77,7 +77,7 @@ public class BsgHlrService implements HlrAsyncService {
         HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), apiKey);
 
         int triesCounter = 0;
-        while (triesCounter < hlrInfoSettings.getLimit() && (hlrInfo.getStatus() == null || !hlrStatuses.getFinalized().contains(hlrInfo.getStatus()))) {
+        while (triesCounter < hlrInfoSettings.getLimit() && !isFinalizedStatus(hlrInfo.getStatus())) {
             sleep(hlrInfoSettings.getPause());
             hlrInfo = api.getHlrInfo(hlrId.getId(), apiKey);
 
@@ -124,6 +124,14 @@ public class BsgHlrService implements HlrAsyncService {
             .statusReceivedAt(hlrInfo.getStatusDatetime())
             .otherProperties(hlrInfo.getOtherProperties())
             .build();
+    }
+
+    private boolean isFinalizedStatus(String responseStatus)  {
+        if (responseStatus == null) {
+            return false;
+        }
+        return hlrStatuses.getFinalized().stream()
+            .anyMatch(status -> status.equalsIgnoreCase(responseStatus));
     }
 
     private HrlRequest mapPhoneToHrlRequest(Phone phone) {

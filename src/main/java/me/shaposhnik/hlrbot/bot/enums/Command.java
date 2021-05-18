@@ -12,7 +12,7 @@ public enum Command {
     ID("/id", "\uD83D\uDD0D", "ID"),
     BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
     CHANGE_API_KEY("/change_api_key", "\uD83D\uDDDD", "Change Api Key"),
-    MENU("/menu", "\uD83C\uDFD8", "Menu");
+    DISCARD_STATE("/discard_state", "\uD83E\uDDF9", "Discard State");
 
     Command(String asCommand, String emoji, String buttonAlias) {
         this.emoji = emoji;

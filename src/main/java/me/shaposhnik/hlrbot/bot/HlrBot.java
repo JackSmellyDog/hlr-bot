@@ -3,6 +3,7 @@ package me.shaposhnik.hlrbot.bot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
+import me.shaposhnik.hlrbot.converter.HlrToTelegramResponseConverter;
 import me.shaposhnik.hlrbot.exception.BaseException;
 import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
@@ -36,7 +37,7 @@ public class HlrBot extends AbstractTelegramBot {
     private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(
         List.of(HLR, ID),
         List.of(BALANCE, CHANGE_API_KEY),
-        List.of(MENU)
+        List.of(DISCARD_STATE)
     );
 
     private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
@@ -48,6 +49,7 @@ public class HlrBot extends AbstractTelegramBot {
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
     private final BsgAccountService accountService;
+    private final HlrToTelegramResponseConverter hlrToTelegramResponseConverter;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -107,7 +109,7 @@ public class HlrBot extends AbstractTelegramBot {
     // TODO: 5/16/21 Refactor this crap
     private void handleSendingApiKeyState(Message message, BotUser botUser) {
         Command.fromString(message.getText())
-            .filter(command -> command == MENU)
+            .filter(command -> command == DISCARD_STATE)
             .ifPresentOrElse(
                 command -> handleIncomeCommand(command, botUser),
                 () -> acceptNewToken(message, botUser, TOKEN_INVALID_MESSAGE));
@@ -130,15 +132,17 @@ public class HlrBot extends AbstractTelegramBot {
     // TODO: 4/15/21 Refactor this crap
     private void handleSendingIdState(Message message, BotUser botUser) {
         Command.fromString(message.getText())
-            .filter(command -> command == MENU)
+            .filter(command -> command == DISCARD_STATE)
             .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
 
+                final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
                 try {
-                    Hlr hlrInfo = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
-                    sendMessageWithButtons(botUser.getId(), hlrInfo.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    final Hlr hlr = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
+                    final String response = hlrToTelegramResponseConverter.convert(hlr);
+                    sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup);
 
                 } catch (BaseException e) {
-                    sendMessageWithButtons(botUser.getId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
                 }
 
                 botUser.setState(ACTIVE);
@@ -149,24 +153,26 @@ public class HlrBot extends AbstractTelegramBot {
     // TODO: 4/15/21 Refactor this crap
     private void handleSendingNumbersState(Message message, BotUser botUser) {
         Command.fromString(message.getText())
-            .filter(command -> command == MENU)
+            .filter(command -> command == DISCARD_STATE)
             .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
 
+                final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
                 try {
                     List<HlrId> hlrIds = hlrService.sendHlrs(Phone.fromString(message.getText()), botUser.getApiKey());
 
                     hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey()).whenComplete((result, error) -> {
                         if (result != null) {
-                            sendMessageWithButtons(botUser.getId(), result.toString(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                            final String response = hlrToTelegramResponseConverter.convert(result);
+                            sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup);
                         } else if (error instanceof BaseException) {
-                            sendMessageWithButtons(botUser.getId(), error.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                            sendMessageWithButtons(botUser.getId(), error.getMessage(), replyKeyboardMarkup);
                         } else {
                             log.error("Error!", error);
                         }
                     });
 
                 } catch (BaseException e) {
-                    sendMessageWithButtons(botUser.getId(), e.getMessage(), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+                    sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
                 }
 
                 botUser.setState(ACTIVE);
@@ -197,7 +203,7 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setState(SENDING_ID);
             botUserService.update(botUser);
 
-        } else if (command == MENU) {
+        } else if (command == DISCARD_STATE) {
 
             botUser.setState(ACTIVE);
             botUserService.update(botUser);
