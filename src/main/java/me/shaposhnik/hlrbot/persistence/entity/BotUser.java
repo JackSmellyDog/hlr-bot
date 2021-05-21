@@ -27,7 +27,7 @@ public class BotUser {
     @Column
     private String apiKey;
 
-    @Column(nullable = false)
+    @Column
     private String userName;
 
     @Column
