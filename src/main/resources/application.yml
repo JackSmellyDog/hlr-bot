@@ -13,6 +13,7 @@ spring:
 bot:
   name:
   token:
+  limit-of-numbers: 3
 
 integration:
   bsg:

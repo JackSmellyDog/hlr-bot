@@ -2,14 +2,13 @@ package me.shaposhnik.hlrbot.integration.bsg;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.integration.bsg.converter.HlrInfoToHlrConverter;
 import me.shaposhnik.hlrbot.integration.bsg.dto.*;
 import me.shaposhnik.hlrbot.integration.bsg.properties.HlrInfoSettings;
 import me.shaposhnik.hlrbot.integration.bsg.properties.HlrStatuses;
 import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.HlrId;
 import me.shaposhnik.hlrbot.model.Phone;
-import me.shaposhnik.hlrbot.model.enums.Ported;
-import me.shaposhnik.hlrbot.model.enums.Roaming;
 import me.shaposhnik.hlrbot.persistence.entity.HlrEntity;
 import me.shaposhnik.hlrbot.persistence.repository.HlrEntityRepository;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
@@ -30,6 +29,7 @@ public class BsgHlrService implements HlrAsyncService {
     private final BsgApiClient api;
     private final HlrEntityRepository repository;
     private final BsgApiErrorHandler bsgApiErrorHandler;
+    private final HlrInfoToHlrConverter hlrInfoToHlrConverter;
     private final HlrStatuses hlrStatuses;
     private final HlrInfoSettings hlrInfoSettings;
 
@@ -67,7 +67,7 @@ public class BsgHlrService implements HlrAsyncService {
         final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), ApiKey.of(token));
         bsgApiErrorHandler.handle(fromErrorCode(hlrInfo.getError()));
 
-        return mapHlrInfoToHlr(hlrInfo);
+        return hlrInfoToHlrConverter.convert(hlrInfo);
     }
 
     @Override
@@ -84,7 +84,43 @@ public class BsgHlrService implements HlrAsyncService {
             triesCounter++;
         }
 
-        return CompletableFuture.completedFuture(mapHlrInfoToHlr(hlrInfo));
+        final Hlr hlr = hlrInfoToHlrConverter.convert(hlrInfo);
+        return CompletableFuture.completedFuture(hlr);
+    }
+
+    @Override
+    public CompletableFuture<List<Hlr>> getHlrInfoListAsync(List<HlrId> hlrIds, String token) {
+        List<Hlr> resultList = new ArrayList<>();
+        List<HlrId> uncheckedHlrIds = new ArrayList<>(hlrIds);
+
+        int triesCounter = 0;
+        do {
+            sleep(hlrInfoSettings.getPause());
+            List<Hlr> hlrInfoList = getHlrInfoList(uncheckedHlrIds, token);
+
+            Map<Boolean, List<Hlr>> groupedByFinalStatus = hlrInfoList.stream()
+                .collect(Collectors.groupingBy(hlr -> isFinalizedStatus(hlr.getStatus())));
+
+            Optional.ofNullable(groupedByFinalStatus.get(true)).ifPresent(resultList::addAll);
+
+            uncheckedHlrIds = Optional.ofNullable(groupedByFinalStatus.get(false))
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(Hlr::getProviderId)
+                .map(HlrId::of)
+                .collect(Collectors.toList());
+
+            triesCounter++;
+
+        } while (!uncheckedHlrIds.isEmpty() && triesCounter < hlrInfoSettings.getLimit());
+
+        if (!uncheckedHlrIds.isEmpty()) {
+            log.info("There are still some sent HLRs left");
+            List<Hlr> notFinalizedHlrList = getHlrInfoList(uncheckedHlrIds, token);
+            resultList.addAll(notFinalizedHlrList);
+        }
+
+        return CompletableFuture.completedFuture(resultList);
     }
 
     @Override
@@ -97,36 +133,13 @@ public class BsgHlrService implements HlrAsyncService {
         return repository.findByProviderId(providerId).orElseThrow(RuntimeException::new);
     }
 
-    private Hlr mapHlrInfoToHlr(HlrInfo hlrInfo) {
-        final Ported ported = Optional.ofNullable(hlrInfo.getDetails())
-            .map(HlrInfo.Details::getPorted)
-            .map(status -> status.equals("1") ? Ported.YES : Ported.NO)
-            .orElse(Ported.UNKNOWN);
-
-        final Roaming roaming = Optional.ofNullable(hlrInfo.getDetails())
-            .map(HlrInfo.Details::getRoaming)
-            .map(status -> status.equals("1") ? Roaming.YES : Roaming.NO)
-            .orElse(Roaming.UNKNOWN);
-
-        final Map<String, String> details = Optional.ofNullable(hlrInfo.getDetails())
-            .map(HlrInfo.Details::getOtherDetails)
-            .orElseGet(Map::of);
-
-        return Hlr.builder()
-            .providerId(hlrInfo.getId())
-            .number(hlrInfo.getMsisdn())
-            .network(hlrInfo.getNetwork())
-            .status(hlrInfo.getStatus())
-            .ported(ported)
-            .roaming(roaming)
-            .details(details)
-            .createdAt(hlrInfo.getCreatedDatetime())
-            .statusReceivedAt(hlrInfo.getStatusDatetime())
-            .otherProperties(hlrInfo.getOtherProperties())
-            .build();
+    private List<Hlr> getHlrInfoList(List<HlrId> hlrIds, String token) {
+        return hlrIds.stream()
+            .map(hlrId -> getHlrInfo(hlrId, token))
+            .collect(Collectors.toList());
     }
 
-    private boolean isFinalizedStatus(String responseStatus)  {
+    private boolean isFinalizedStatus(String responseStatus) {
         if (responseStatus == null) {
             return false;
         }

@@ -50,7 +50,7 @@ public class BsgApiClient {
         final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
 
         return Optional.ofNullable(multipleHlrResponse.getResult())
-            .orElseGet(ArrayList::new)
+            .orElseGet(Collections::emptyList)
             .stream()
             .findFirst()
             .orElseThrow(BsgException::new);

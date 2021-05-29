@@ -24,6 +24,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -43,8 +44,11 @@ public class HlrBot extends AbstractTelegramBot {
     private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
     private static final String TOKEN_INVALID_MESSAGE = "It's an invalid token. Please send again!";
     private static final String TOKEN_ACCEPTED_MESSAGE = "Api Key has been accepted!";
-    private static final String NUMBER_FOR_HLR_REQUIRED = "Send me the number you want to hlr!";
+    private static final String NUMBER_FOR_HLR_REQUIRED_TEMPLATE = "Send me up to %s numbers you want to hlr!";
     private static final String ID_FOR_HLR_REQUIRED = "Send me the ID of previous HLR request!";
+
+    private static final String TOO_MANY_PHONES_MESSAGE_TEMPLATE =
+        "Phone(s): %s was/were ignored. Please, send them in the next request.";
 
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
@@ -56,6 +60,9 @@ public class HlrBot extends AbstractTelegramBot {
 
     @Value("${bot.token}")
     private String botToken;
+
+    @Value("${bot.limit-of-numbers}")
+    private int limitOfNumbers;
 
     @Override
     public String getBotUsername() {
@@ -112,7 +119,8 @@ public class HlrBot extends AbstractTelegramBot {
             .filter(command -> command == DISCARD_STATE)
             .ifPresentOrElse(
                 command -> handleIncomeCommand(command, botUser),
-                () -> acceptNewToken(message, botUser, TOKEN_INVALID_MESSAGE));
+                () -> acceptNewToken(message, botUser, TOKEN_INVALID_MESSAGE)
+            );
     }
 
     private void acceptNewToken(Message message, BotUser botUser, String warningMessageText) {
@@ -155,21 +163,23 @@ public class HlrBot extends AbstractTelegramBot {
         Command.fromString(message.getText())
             .filter(command -> command == DISCARD_STATE)
             .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
+                var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
-                final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
                 try {
-                    List<HlrId> hlrIds = hlrService.sendHlrs(Phone.fromString(message.getText()), botUser.getApiKey());
+                    List<Phone> receivedPhones = Phone.fromString(message.getText());
 
-                    hlrService.getHlrInfoAsync(hlrIds.get(0), botUser.getApiKey()).whenComplete((result, error) -> {
-                        if (result != null) {
-                            final String response = hlrToTelegramResponseConverter.convert(result);
-                            sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup);
-                        } else if (error instanceof BaseException) {
-                            sendMessageWithButtons(botUser.getId(), error.getMessage(), replyKeyboardMarkup);
-                        } else {
-                            log.error("Error!", error);
-                        }
-                    });
+                    List<Phone> phones = limitPhones(receivedPhones);
+                    List<Phone> ignoredPhones = getIgnoredPhones(receivedPhones);
+
+                    if (!ignoredPhones.isEmpty()) {
+                        final String tooManyPhonesMessage = String.format(TOO_MANY_PHONES_MESSAGE_TEMPLATE, ignoredPhones);
+                        sendMessageWithButtons(botUser.getId(), tooManyPhonesMessage, replyKeyboardMarkup);
+                    }
+
+                    List<HlrId> hlrIds = hlrService.sendHlrs(phones, botUser.getApiKey());
+
+                    hlrService.getHlrInfoListAsync(hlrIds, botUser.getApiKey())
+                        .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
 
                 } catch (BaseException e) {
                     sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
@@ -180,18 +190,56 @@ public class HlrBot extends AbstractTelegramBot {
             });
     }
 
+    private List<Phone> limitPhones(List<Phone> phones) {
+        if (phones.size() > limitOfNumbers) {
+            return List.copyOf(phones.subList(0, limitOfNumbers));
+        }
+
+        return phones;
+    }
+
+    private List<Phone> getIgnoredPhones(List<Phone> phones) {
+        if (phones.size() > limitOfNumbers) {
+            return List.copyOf(phones.subList(limitOfNumbers, phones.size()));
+        }
+
+        return List.of();
+    }
+
+    private void whenHlrInfoComplete(Long telegramId, List<Hlr> result, Throwable error) {
+        final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
+
+        if (result != null) {
+            result.stream()
+                .map(hlrToTelegramResponseConverter::convert)
+                .forEach(response -> sendMessageWithButtons(telegramId, response, replyKeyboardMarkup));
+
+        } else if (error instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
+
+        } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
+
+        } else {
+            log.error("Error!", error);
+        }
+    }
+
     private void handleNewState(Message message, BotUser botUser) {
         acceptNewToken(message, botUser, TOKEN_REQUIRED_MESSAGE);
     }
 
     private void handleActiveState(Message message, BotUser botUser) {
-        Command.fromString(message.getText())
-            .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> log.info("Message ({}) ignored", message.getText()));
+        Command.fromString(message.getText()).ifPresentOrElse(
+            command -> handleIncomeCommand(command, botUser),
+            () -> log.info("Message ({}) ignored", message.getText())
+        );
     }
 
     private void handleIncomeCommand(Command command, BotUser botUser) {
         if (command == HLR) {
-            sendMessageWithButtons(botUser.getId(), NUMBER_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
+            final String numberForHlrMessage = String.format(NUMBER_FOR_HLR_REQUIRED_TEMPLATE, limitOfNumbers);
+            sendMessageWithButtons(botUser.getId(), numberForHlrMessage, createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_NUMBERS);
             botUserService.update(botUser);
@@ -227,8 +275,7 @@ public class HlrBot extends AbstractTelegramBot {
     }
 
     private ReplyKeyboardMarkup createReplyKeyboardMarkup(List<List<Command>> keyboard) {
-
-        List<KeyboardRow> keyboardRows = keyboard.stream()
+        var keyboardRows = keyboard.stream()
             .filter(not(List::isEmpty))
             .map(this::mapCommandsListToKeyboardRow)
             .collect(Collectors.toList());
@@ -241,11 +288,10 @@ public class HlrBot extends AbstractTelegramBot {
     }
 
     private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
-        KeyboardRow row = new KeyboardRow();
+        var row = new KeyboardRow();
         commandList.stream().map(Command::asButton).forEach(row::add);
 
         return row;
     }
-
 
 }
