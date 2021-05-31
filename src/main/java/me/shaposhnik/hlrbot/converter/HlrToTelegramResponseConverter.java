@@ -1,9 +1,12 @@
 package me.shaposhnik.hlrbot.converter;
 
 import me.shaposhnik.hlrbot.model.Hlr;
+import me.shaposhnik.hlrbot.model.Phone;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
@@ -11,6 +14,7 @@ import static org.apache.commons.lang3.StringUtils.capitalize;
 @Component
 public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
 
+    private static final String REQUESTED_PHONE_NUMBER = "Requested number";
     private static final String PROVIDER_ID = "ProviderId";
     private static final String MSISDN = "Msisdn";
     private static final String NETWORK = "Network";
@@ -27,7 +31,12 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
 
     @Override
     public String convert(@NonNull Hlr hlr) {
+        final String requestedPhoneNumber = Optional.ofNullable(hlr.getPhone())
+            .map(Phone::getFilteredNumber)
+            .orElse("-");
+
         var mainBuilder = new StringBuilder()
+            .append(bold(REQUESTED_PHONE_NUMBER)).append(COLON_SPACE).append(requestedPhoneNumber).append(EOL)
             .append(bold(PROVIDER_ID)).append(COLON_SPACE).append(hlr.getProviderId()).append(EOL)
             .append(bold(MSISDN)).append(COLON_SPACE).append(hlr.getMsisdn()).append(EOL)
             .append(bold(NETWORK)).append(COLON_SPACE).append(hlr.getNetwork()).append(EOL)

@@ -12,6 +12,8 @@ import java.util.Map;
 @Setter
 @Builder
 public class Hlr {
+    private Phone phone;
+
     private String providerId;
     private String msisdn;
     private String network;

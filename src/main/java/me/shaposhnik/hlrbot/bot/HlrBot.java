@@ -7,10 +7,7 @@ import me.shaposhnik.hlrbot.converter.HlrToTelegramResponseConverter;
 import me.shaposhnik.hlrbot.exception.BaseException;
 import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
-import me.shaposhnik.hlrbot.model.Balance;
-import me.shaposhnik.hlrbot.model.Hlr;
-import me.shaposhnik.hlrbot.model.HlrId;
-import me.shaposhnik.hlrbot.model.Phone;
+import me.shaposhnik.hlrbot.model.*;
 import me.shaposhnik.hlrbot.model.enums.UserState;
 import me.shaposhnik.hlrbot.persistence.entity.BotUser;
 import me.shaposhnik.hlrbot.service.BotUserService;
@@ -176,9 +173,9 @@ public class HlrBot extends AbstractTelegramBot {
                         sendMessageWithButtons(botUser.getId(), tooManyPhonesMessage, replyKeyboardMarkup);
                     }
 
-                    List<HlrId> hlrIds = hlrService.sendHlrs(phones, botUser.getApiKey());
+                    List<HlrIdPhonePair> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
 
-                    hlrService.getHlrInfoListAsync(hlrIds, botUser.getApiKey())
+                    hlrService.getHlrInfoListAsync(hlrIdPhonePairs, botUser.getApiKey())
                         .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
 
                 } catch (BaseException e) {
