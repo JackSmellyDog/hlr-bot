@@ -24,6 +24,7 @@ public class Phone {
         return Stream.of(text.split(SEPARATORS_REGEX))
             .filter(Objects::nonNull)
             .filter(not(String::isEmpty))
+            .map(String::trim)
             .map(Phone::of)
             .distinct()
             .collect(Collectors.toList());

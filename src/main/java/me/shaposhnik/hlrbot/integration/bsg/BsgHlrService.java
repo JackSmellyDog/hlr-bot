@@ -35,7 +35,7 @@ public class BsgHlrService implements HlrAsyncService {
 
     @Override
     public HlrId sendHlr(Phone phone, String token) {
-        final HrlRequest request = mapPhoneToHrlRequest(phone);
+        final HrlRequest request = createHrlRequest(phone, generateReference());
         final HlrResponse hlrResponse = api.sendHlr(request, ApiKey.of(token));
         bsgApiErrorHandler.handle(fromErrorCode(hlrResponse.getError()));
 
@@ -45,7 +45,7 @@ public class BsgHlrService implements HlrAsyncService {
     @Override
     public <T extends Collection<Phone>> List<HlrId> sendHlrs(T phones, String token) {
         final List<HrlRequest> hrlRequests = phones.stream()
-            .map(this::mapPhoneToHrlRequest)
+            .map(phone -> createHrlRequest(phone, generateReference()))
             .collect(Collectors.toList());
 
         final MultipleHlrResponse multipleHlrResponse = api.sendHlrs(hrlRequests, ApiKey.of(token));
@@ -96,7 +96,7 @@ public class BsgHlrService implements HlrAsyncService {
         int triesCounter = 0;
         do {
             sleep(hlrInfoSettings.getPause());
-            List<Hlr> hlrInfoList = getHlrInfoList(uncheckedHlrIds, token);
+            List<Hlr> hlrInfoList = getHlrInfoListSafe(uncheckedHlrIds, token);
 
             Map<Boolean, List<Hlr>> groupedByFinalStatus = hlrInfoList.stream()
                 .collect(Collectors.groupingBy(hlr -> isFinalizedStatus(hlr.getStatus())));
@@ -116,7 +116,7 @@ public class BsgHlrService implements HlrAsyncService {
 
         if (!uncheckedHlrIds.isEmpty()) {
             log.info("There are still some sent HLRs left");
-            List<Hlr> notFinalizedHlrList = getHlrInfoList(uncheckedHlrIds, token);
+            List<Hlr> notFinalizedHlrList = getHlrInfoListSafe(uncheckedHlrIds, token);
             resultList.addAll(notFinalizedHlrList);
         }
 
@@ -133,9 +133,14 @@ public class BsgHlrService implements HlrAsyncService {
         return repository.findByProviderId(providerId).orElseThrow(RuntimeException::new);
     }
 
-    private List<Hlr> getHlrInfoList(List<HlrId> hlrIds, String token) {
+    private Hlr getHlrInfoSafe(HlrId hlrId, String token) {
+        final HlrInfo hlrInfo = api.getHlrInfo(hlrId.getId(), ApiKey.of(token));
+        return hlrInfoToHlrConverter.convert(hlrInfo);
+    }
+
+    private List<Hlr> getHlrInfoListSafe(List<HlrId> hlrIds, String token) {
         return hlrIds.stream()
-            .map(hlrId -> getHlrInfo(hlrId, token))
+            .map(hlrId -> getHlrInfoSafe(hlrId, token))
             .collect(Collectors.toList());
     }
 
@@ -147,10 +152,10 @@ public class BsgHlrService implements HlrAsyncService {
             .anyMatch(status -> status.equalsIgnoreCase(responseStatus));
     }
 
-    private HrlRequest mapPhoneToHrlRequest(Phone phone) {
+    private HrlRequest createHrlRequest(Phone phone, String reference) {
         return HrlRequest.builder()
             .msisdn(phone.getFilteredNumber())
-            .reference(generateReference())
+            .reference(reference)
             .build();
     }
 

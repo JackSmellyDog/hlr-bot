@@ -13,7 +13,7 @@ import java.util.Map;
 @Builder
 public class Hlr {
     private String providerId;
-    private String number;
+    private String msisdn;
     private String network;
     private String status;
 

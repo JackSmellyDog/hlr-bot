@@ -12,7 +12,7 @@ import static org.apache.commons.lang3.StringUtils.capitalize;
 public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
 
     private static final String PROVIDER_ID = "ProviderId";
-    private static final String NUMBER = "Number";
+    private static final String MSISDN = "Msisdn";
     private static final String NETWORK = "Network";
     private static final String STATUS = "Status";
     private static final String PORTED = "Ported";
@@ -29,7 +29,7 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
     public String convert(@NonNull Hlr hlr) {
         var mainBuilder = new StringBuilder()
             .append(bold(PROVIDER_ID)).append(COLON_SPACE).append(hlr.getProviderId()).append(EOL)
-            .append(bold(NUMBER)).append(COLON_SPACE).append(hlr.getNumber()).append(EOL)
+            .append(bold(MSISDN)).append(COLON_SPACE).append(hlr.getMsisdn()).append(EOL)
             .append(bold(NETWORK)).append(COLON_SPACE).append(hlr.getNetwork()).append(EOL)
             .append(bold(STATUS)).append(COLON_SPACE).append(capitalize(hlr.getStatus())).append(EOL)
             .append(bold(PORTED)).append(COLON_SPACE).append(hlr.getPorted()).append(EOL)

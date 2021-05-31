@@ -32,7 +32,7 @@ public class HlrInfoToHlrConverter implements Converter<HlrInfo, Hlr> {
 
         return Hlr.builder()
             .providerId(hlrInfo.getId())
-            .number(hlrInfo.getMsisdn())
+            .msisdn(hlrInfo.getMsisdn())
             .network(hlrInfo.getNetwork())
             .status(hlrInfo.getStatus())
             .ported(ported)
