@@ -18,12 +18,12 @@ public class HlrInfoToHlrConverter implements Converter<HlrInfo, Hlr> {
     public Hlr convert(@NonNull HlrInfo hlrInfo) {
         final Ported ported = Optional.ofNullable(hlrInfo.getDetails())
             .map(HlrInfo.Details::getPorted)
-            .map(status -> status.equals("1") ? Ported.YES : Ported.NO)
+            .map(Ported::fromString)
             .orElse(Ported.UNKNOWN);
 
         final Roaming roaming = Optional.ofNullable(hlrInfo.getDetails())
             .map(HlrInfo.Details::getRoaming)
-            .map(status -> status.equals("1") ? Roaming.YES : Roaming.NO)
+            .map(Roaming::fromString)
             .orElse(Roaming.UNKNOWN);
 
         final Map<String, String> details = Optional.ofNullable(hlrInfo.getDetails())
