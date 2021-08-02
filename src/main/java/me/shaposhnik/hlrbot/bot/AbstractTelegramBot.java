@@ -1,11 +1,19 @@
 package me.shaposhnik.hlrbot.bot;
 
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.files.FileExtensionResolver;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Optional;
 
 @Slf4j
 public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
@@ -58,5 +66,24 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     public void sendMessageWithButtons(Long chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
         sendMessageWithButtons(Long.toString(chatId), text, replyKeyboardMarkup);
+    }
+
+    public Optional<File> downloadDocumentToTempFile(Document document, Path directory) {
+        try {
+            final GetFile getFile = new GetFile();
+            getFile.setFileId(document.getFileId());
+
+            final String telegramUrlFilePath = execute(getFile).getFilePath();
+
+            final String fileExtension =
+                FileExtensionResolver.resolveExtensionOrDefaultWithDot(document.getMimeType(), ".txt");
+
+            final File tempFile = File.createTempFile(document.getFileUniqueId(), fileExtension, directory.toFile());
+
+            return Optional.of(downloadFile(telegramUrlFilePath, tempFile));
+        } catch (TelegramApiException | IOException e) {
+            log.error("Something went wrong while downloading file", e);
+            return Optional.empty();
+        }
     }
 }
