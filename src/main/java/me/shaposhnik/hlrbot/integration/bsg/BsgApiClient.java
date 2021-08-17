@@ -8,6 +8,7 @@ import me.shaposhnik.hlrbot.integration.bsg.dto.*;
 import me.shaposhnik.hlrbot.integration.bsg.exception.BsgApiException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.BsgException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
+import me.shaposhnik.hlrbot.integration.bsg.properties.IntegrationUrlsProperties;
 import okhttp3.*;
 import org.springframework.stereotype.Component;
 
@@ -18,15 +19,13 @@ import java.util.*;
 @Component
 @RequiredArgsConstructor
 public class BsgApiClient {
-    private static final String ROOT_LINK = "https://app.bsg.hk/rest";
-    private static final String REQUEST_HLR_INFO_LINK = ROOT_LINK + "/hlr/";
-    private static final String CREATE_HLR_LINK = ROOT_LINK + "/hlr/create";
-    private static final String BALANCE_LINK = ROOT_LINK + "/common/balance";
+
     private static final MediaType APPLICATION_JSON = MediaType.get("application/json");
     private static final String X_API_KEY = "X-API-KEY";
 
     private final OkHttpClient client;
     private final ObjectMapper objectMapper;
+    private final IntegrationUrlsProperties integrationUrlsProperties;
 
 
     public <T extends Collection<HrlRequest>> MultipleHlrResponse sendHlrs(T hrlRequests, ApiKey apiKey) {
@@ -58,7 +57,7 @@ public class BsgApiClient {
 
     public HlrInfo getHlrInfo(String id, ApiKey apiKey) {
         Request request = new Request.Builder()
-            .url(REQUEST_HLR_INFO_LINK + id)
+            .url(integrationUrlsProperties.getRequestHlrInfoUrl() + id)
             .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
@@ -81,7 +80,7 @@ public class BsgApiClient {
 
     public BalanceResponse checkBalance(ApiKey apiKey) {
         Request request = new Request.Builder()
-            .url(BALANCE_LINK)
+            .url(integrationUrlsProperties.getBalanceUrl())
             .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
@@ -108,7 +107,7 @@ public class BsgApiClient {
             final RequestBody requestBody = RequestBody.create(payload, APPLICATION_JSON);
 
             return new Request.Builder()
-                .url(CREATE_HLR_LINK)
+                .url(integrationUrlsProperties.getCreateHlrUrl())
                 .header(X_API_KEY, apiKey.getKey())
                 .post(requestBody)
                 .build();
