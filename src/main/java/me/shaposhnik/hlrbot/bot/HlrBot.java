@@ -1,7 +1,6 @@
 package me.shaposhnik.hlrbot.bot;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
 import me.shaposhnik.hlrbot.converter.HlrToTelegramResponseConverter;
@@ -130,7 +129,6 @@ public class HlrBot extends AbstractTelegramBot {
         } else {
             throw new IllegalStateException("Unhandled state is present");
         }
-
     }
 
     private void handleSendingFileState(Message message, BotUser botUser) {
@@ -151,7 +149,6 @@ public class HlrBot extends AbstractTelegramBot {
             }
 
             try {
-
                 downloadDocumentToTempFile(document, Path.of(fileDownloadDirectory)).ifPresent(file -> {
                     List<Phone> phones = fileService.readPhones(file);
                     List<HlrIdPhonePair> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
@@ -178,7 +175,6 @@ public class HlrBot extends AbstractTelegramBot {
             final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
             try {
-
                 sendMessageWithButtons(botUser.getId(), null, replyKeyboardMarkup);
 
             } catch (BaseException e) {

@@ -30,6 +30,7 @@ public class BsgHlrService implements HlrAsyncService {
 
     private final BsgApiClient api;
     private final HlrEntityRepository repository;
+    private final ReferenceGenerator referenceGenerator;
     private final BsgApiErrorHandler bsgApiErrorHandler;
     private final HlrInfoToHlrConverter hlrInfoToHlrConverter;
     private final HlrStatuses hlrStatuses;
@@ -37,7 +38,7 @@ public class BsgHlrService implements HlrAsyncService {
 
     @Override
     public HlrId sendHlr(Phone phone, String token) {
-        final String reference = generateReference();
+        final String reference = referenceGenerator.generateReference();
         final HrlRequest request = createHrlRequest(reference, phone);
         final HlrResponse hlrResponse = api.sendHlr(request, ApiKey.of(token));
         bsgApiErrorHandler.handle(fromErrorCode(hlrResponse.getError()));
@@ -48,7 +49,7 @@ public class BsgHlrService implements HlrAsyncService {
     @Override
     public <T extends Collection<Phone>> List<HlrIdPhonePair> sendHlrs(T phones, String token) {
         final Map<String, Phone> referenceToPhoneMap = phones.stream()
-            .collect(Collectors.toMap(phone -> generateReference(), Function.identity()));
+            .collect(Collectors.toMap(phone -> referenceGenerator.generateReference(), Function.identity()));
 
         final List<HrlRequest> hrlRequests = referenceToPhoneMap.entrySet().stream()
             .map(entry -> createHrlRequest(entry.getKey(), entry.getValue()))
@@ -173,10 +174,6 @@ public class BsgHlrService implements HlrAsyncService {
             .reference(reference)
             .msisdn(phone.getFilteredNumber())
             .build();
-    }
-
-    private String generateReference() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 13);
     }
 
     private void sleep(long millis) {
