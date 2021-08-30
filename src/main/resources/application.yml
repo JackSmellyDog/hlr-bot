@@ -16,6 +16,11 @@ bot:
   limit-of-numbers: 3
 
 integration:
+  urls:
+    base-url: https://app.bsg.hk/rest
+    request-hlr-info-url: ${integration.urls.base-url}/hlr/
+    create-hlr-url: ${integration.urls.base-url}/hlr/create
+    balance-url: ${integration.urls.base-url}/common/balance
   bsg:
     hlr-statuses:
       finalized:
