@@ -10,8 +10,6 @@ import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.HlrId;
 import me.shaposhnik.hlrbot.model.HlrIdPhonePair;
 import me.shaposhnik.hlrbot.model.Phone;
-import me.shaposhnik.hlrbot.persistence.entity.HlrEntity;
-import me.shaposhnik.hlrbot.persistence.repository.HlrEntityRepository;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +27,6 @@ import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.fromErrorCode
 public class BsgHlrService implements HlrAsyncService {
 
     private final BsgApiClient api;
-    private final HlrEntityRepository repository;
     private final ReferenceGenerator referenceGenerator;
     private final BsgApiErrorHandler bsgApiErrorHandler;
     private final HlrInfoToHlrConverter hlrInfoToHlrConverter;
@@ -132,16 +129,6 @@ public class BsgHlrService implements HlrAsyncService {
         }
 
         return CompletableFuture.completedFuture(resultList);
-    }
-
-    @Override
-    public void save(HlrEntity hlr) {
-        repository.save(hlr);
-    }
-
-    @Override
-    public HlrEntity retrieveHlrByProviderId(String providerId) {
-        return repository.findByProviderId(providerId).orElseThrow(RuntimeException::new);
     }
 
     private Hlr getHlrInfoSafe(HlrIdPhonePair hlrIdPhonePair, String token) {
