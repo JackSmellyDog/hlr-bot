@@ -13,6 +13,7 @@ import me.shaposhnik.hlrbot.model.enums.UserState;
 import me.shaposhnik.hlrbot.persistence.entity.BotUser;
 import me.shaposhnik.hlrbot.service.BotUserService;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
+import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
@@ -58,6 +59,7 @@ public class HlrBot extends AbstractTelegramBot {
     private final BsgAccountService accountService;
     private final HlrToTelegramResponseConverter hlrToTelegramResponseConverter;
     private final FileService fileService;
+    private final PhoneService phoneService;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -133,7 +135,7 @@ public class HlrBot extends AbstractTelegramBot {
 
     private void handleSendingFileState(Message message, BotUser botUser) {
         if (notDiscardStateCommand(message)) {
-            final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
+            final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
             if (!message.hasDocument()) {
                 sendMessageWithButtons(botUser.getId(), NO_FILES_IN_MESSAGE, replyKeyboardMarkup);
@@ -218,7 +220,7 @@ public class HlrBot extends AbstractTelegramBot {
 
     private void handleSendingIdState(Message message, BotUser botUser) {
         if (notDiscardStateCommand(message)) {
-            final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
+            final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
             try {
                 final Hlr hlr = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
                 final String response = hlrToTelegramResponseConverter.convert(hlr);
@@ -240,10 +242,10 @@ public class HlrBot extends AbstractTelegramBot {
             var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
             try {
-                List<Phone> receivedPhones = Phone.fromString(message.getText());
+                List<Phone> receivedPhones = phoneService.parseFromString(message.getText());
 
-                List<Phone> phones = limitPhones(receivedPhones);
-                List<Phone> ignoredPhones = getIgnoredPhones(receivedPhones);
+                List<Phone> phones = phoneService.limitPhones(receivedPhones);
+                List<Phone> ignoredPhones = phoneService.getIgnoredPhones(receivedPhones);
 
                 if (!ignoredPhones.isEmpty()) {
                     final String tooManyPhonesMessage = String.format(TOO_MANY_PHONES_MESSAGE_TEMPLATE, ignoredPhones);
@@ -264,22 +266,6 @@ public class HlrBot extends AbstractTelegramBot {
         } else {
             handleIncomeCommand(DISCARD_STATE, botUser);
         }
-    }
-
-    private List<Phone> limitPhones(List<Phone> phones) {
-        if (phones.size() > limitOfNumbers) {
-            return List.copyOf(phones.subList(0, limitOfNumbers));
-        }
-
-        return phones;
-    }
-
-    private List<Phone> getIgnoredPhones(List<Phone> phones) {
-        if (phones.size() > limitOfNumbers) {
-            return List.copyOf(phones.subList(limitOfNumbers, phones.size()));
-        }
-
-        return List.of();
     }
 
     private void whenHlrInfoComplete(Long telegramId, List<Hlr> result, Throwable error) {

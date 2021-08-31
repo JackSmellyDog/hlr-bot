@@ -29,9 +29,9 @@ public class BsgApiClient {
 
 
     public <T extends Collection<HrlRequest>> MultipleHlrResponse sendHlrs(T hrlRequests, ApiKey apiKey) {
-        final Request request = createHlrOkHttpRequest(hrlRequests, apiKey);
+        final var request = createHlrOkHttpRequest(hrlRequests, apiKey);
 
-        try (Response response = client.newCall(request).execute()) {
+        try (var response = client.newCall(request).execute()) {
             return Optional.ofNullable(response.body())
                 .map(this::mapOkHttpResponseBodyToMultipleHlrResponseOrNull)
                 .orElseThrow(BsgException::new);
@@ -46,7 +46,7 @@ public class BsgApiClient {
 
     // TODO: 4/13/21 rewrite with multipart data
     public HlrResponse sendHlr(HrlRequest hrlRequest, ApiKey apiKey) {
-        final MultipleHlrResponse multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
+        final var multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
 
         return Optional.ofNullable(multipleHlrResponse.getResult())
             .orElseGet(Collections::emptyList)
@@ -56,13 +56,13 @@ public class BsgApiClient {
     }
 
     public HlrInfo getHlrInfo(String id, ApiKey apiKey) {
-        Request request = new Request.Builder()
+        final var request = new Request.Builder()
             .url(integrationUrlsProperties.getRequestHlrInfoUrl() + id)
             .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
                 final String message = String.format("Response was unsuccessful or body was null! Code: %d", response.code());
                 throw new BsgException(message);
@@ -79,13 +79,13 @@ public class BsgApiClient {
     }
 
     public BalanceResponse checkBalance(ApiKey apiKey) {
-        Request request = new Request.Builder()
+        final var request = new Request.Builder()
             .url(integrationUrlsProperties.getBalanceUrl())
             .header(X_API_KEY, apiKey.getKey())
             .get()
             .build();
 
-        try (Response response = client.newCall(request).execute()) {
+        try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
                 final String message = String.format("Response was unsuccessful or body was null! Code: %d", response.code());
                 throw new BsgException(message);
@@ -104,7 +104,7 @@ public class BsgApiClient {
     private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests, ApiKey apiKey) {
         try {
             final String payload = objectMapper.writeValueAsString(hrlRequests);
-            final RequestBody requestBody = RequestBody.create(payload, APPLICATION_JSON);
+            final var requestBody = RequestBody.create(payload, APPLICATION_JSON);
 
             return new Request.Builder()
                 .url(integrationUrlsProperties.getCreateHlrUrl())

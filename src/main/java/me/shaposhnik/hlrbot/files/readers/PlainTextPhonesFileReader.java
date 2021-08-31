@@ -1,7 +1,9 @@
 package me.shaposhnik.hlrbot.files.readers;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.model.Phone;
+import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -15,7 +17,10 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class PlainTextPhonesFileReader implements PhonesFileReader {
+
+    private final PhoneService phoneService;
 
     @Override
     public List<Phone> readPhones(File file) {
@@ -23,7 +28,7 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
         try (BufferedReader br = Files.newBufferedReader(file.toPath())) {
 
             return br.lines()
-                .map(Phone::fromString)
+                .map(phoneService::parseFromString)
                 .flatMap(Collection::stream)
                 .distinct()
                 .collect(Collectors.toList());
