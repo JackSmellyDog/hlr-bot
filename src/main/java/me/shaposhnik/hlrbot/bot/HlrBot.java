@@ -153,7 +153,7 @@ public class HlrBot extends AbstractTelegramBot {
             try {
                 downloadDocumentToTempFile(document, Path.of(fileDownloadDirectory)).ifPresent(file -> {
                     List<Phone> phones = fileService.readPhones(file);
-                    List<HlrIdPhonePair> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
+                    List<SentHlr> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
 
 
                     sendMessageWithButtons(botUser.getId(), null, replyKeyboardMarkup);
@@ -222,7 +222,7 @@ public class HlrBot extends AbstractTelegramBot {
         if (notDiscardStateCommand(message)) {
             final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
             try {
-                final Hlr hlr = hlrService.getHlrInfo(HlrId.of(message.getText()), botUser.getApiKey());
+                final Hlr hlr = hlrService.getHlrInfoByProviderId(message.getText(), botUser.getApiKey());
                 final String response = hlrToTelegramResponseConverter.convert(hlr);
                 sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup);
 
@@ -252,7 +252,7 @@ public class HlrBot extends AbstractTelegramBot {
                     sendMessageWithButtons(botUser.getId(), tooManyPhonesMessage, replyKeyboardMarkup);
                 }
 
-                List<HlrIdPhonePair> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
+                List<SentHlr> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
 
                 hlrService.getHlrInfoListAsync(hlrIdPhonePairs, botUser.getApiKey())
                     .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));

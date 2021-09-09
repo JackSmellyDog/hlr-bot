@@ -1,9 +1,12 @@
 package me.shaposhnik.hlrbot.model;
 
+import lombok.Getter;
+
 import java.util.Objects;
 
 public class Phone {
 
+    @Getter
     private final String rawNumberValue;
 
     public static Phone of(String rawNumberValue) {

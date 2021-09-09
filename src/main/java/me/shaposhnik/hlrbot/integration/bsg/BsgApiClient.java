@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.integration.bsg.dto.*;
-import me.shaposhnik.hlrbot.integration.bsg.exception.BsgApiException;
 import me.shaposhnik.hlrbot.integration.bsg.exception.BsgException;
-import me.shaposhnik.hlrbot.integration.bsg.exception.UnknownHlrInfoResponseException;
 import me.shaposhnik.hlrbot.integration.bsg.properties.IntegrationUrlsProperties;
 import okhttp3.*;
 import org.springframework.stereotype.Component;
@@ -120,7 +118,10 @@ public class BsgApiClient {
 
     private MultipleHlrResponse mapOkHttpResponseBodyToMultipleHlrResponseOrNull(ResponseBody responseBody) {
         try {
-            return objectMapper.readValue(responseBody.string(), MultipleHlrResponse.class);
+            String con = responseBody.string();
+            log.info(con);
+
+            return objectMapper.readValue(con, MultipleHlrResponse.class);
         } catch (Exception e) {
             log.error("Failed to read MultipleHlrResponse from string!", e);
             return null;
@@ -134,7 +135,7 @@ public class BsgApiClient {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
             log.error("Can't deserialize to HlrInfo: ({})", originalResponseBody);
 
-            throw new UnknownHlrInfoResponseException(originalResponseBody, e);
+            throw new BsgException(e);
         } catch (Exception e) {
             log.error("Something went wrong when deserialize to HlrInfo!");
             throw new BsgException(e);
@@ -146,12 +147,7 @@ public class BsgApiClient {
             return objectMapper.readValue(responseBody.string(), BalanceResponse.class);
         } catch (JsonProcessingException e) {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
-
             log.error("Can't deserialize to BalanceResponse: ({})", originalResponseBody);
-
-            mapStringToApiError(originalResponseBody).ifPresent(apiError -> {
-                throw new BsgApiException(apiError);
-            });
 
             throw new BsgException(e);
         } catch (Exception e) {
@@ -159,15 +155,4 @@ public class BsgApiClient {
             throw new BsgException(e);
         }
     }
-
-    private Optional<ApiError> mapStringToApiError(String value) {
-        try {
-            return Optional.of(objectMapper.readValue(value, ApiError.class));
-        } catch (JsonProcessingException e) {
-
-            log.warn("Failed to map: {} to ApiError", value);
-            return Optional.empty();
-        }
-    }
-
 }

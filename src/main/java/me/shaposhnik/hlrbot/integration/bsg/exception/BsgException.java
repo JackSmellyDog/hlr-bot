@@ -1,6 +1,8 @@
 package me.shaposhnik.hlrbot.integration.bsg.exception;
 
-public class BsgException extends RuntimeException {
+import me.shaposhnik.hlrbot.exception.BaseException;
+
+public class BsgException extends BaseException {
 
     public BsgException() {
     }

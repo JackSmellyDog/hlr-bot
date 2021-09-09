@@ -31,8 +31,9 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
 
     @Override
     public String convert(@NonNull Hlr hlr) {
+
         final String requestedPhoneNumber = Optional.ofNullable(hlr.getPhone())
-            .map(Phone::getFilteredNumber)
+            .map(Phone::getRawNumberValue)
             .orElse("-");
 
         var mainBuilder = new StringBuilder()

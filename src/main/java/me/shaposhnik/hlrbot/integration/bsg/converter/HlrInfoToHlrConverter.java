@@ -15,6 +15,7 @@ import java.util.Optional;
 public class HlrInfoToHlrConverter implements Converter<HlrInfo, Hlr> {
 
     @Override
+    @NonNull
     public Hlr convert(@NonNull HlrInfo hlrInfo) {
         final Ported ported = Optional.ofNullable(hlrInfo.getDetails())
             .map(HlrInfo.Details::getPorted)
