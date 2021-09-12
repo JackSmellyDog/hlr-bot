@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 
 @Slf4j
 @Component
@@ -30,14 +32,12 @@ public class BsgApiClient {
         final var request = createHlrOkHttpRequest(hrlRequests, apiKey);
 
         try (var response = client.newCall(request).execute()) {
-            return Optional.ofNullable(response.body())
-                .map(this::mapOkHttpResponseBodyToMultipleHlrResponseOrNull)
-                .orElseThrow(BsgException::new);
+            return mapOkHttpResponseBodyToMultipleHlrResponse(response.body());
 
         } catch (BsgException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to send HLR request!");
+            log.error("Failed to send HLR request!", e);
             throw new BsgException(e);
         }
     }
@@ -63,6 +63,8 @@ public class BsgApiClient {
         try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
                 final String message = String.format("Response was unsuccessful or body was null! Code: %d", response.code());
+                log.error(message);
+
                 throw new BsgException(message);
             }
 
@@ -86,6 +88,8 @@ public class BsgApiClient {
         try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
                 final String message = String.format("Response was unsuccessful or body was null! Code: %d", response.code());
+                log.error(message);
+
                 throw new BsgException(message);
             }
 
@@ -116,28 +120,32 @@ public class BsgApiClient {
         }
     }
 
-    private MultipleHlrResponse mapOkHttpResponseBodyToMultipleHlrResponseOrNull(ResponseBody responseBody) {
+    private MultipleHlrResponse mapOkHttpResponseBodyToMultipleHlrResponse(ResponseBody responseBody) {
         try {
-            String con = responseBody.string();
-            log.info(con);
+            requireNonNull(responseBody, "Response Body must not be null!");
+            final String body = responseBody.string();
+            log.info("HLR Request response received with body: {}", body);
 
-            return objectMapper.readValue(con, MultipleHlrResponse.class);
+            return objectMapper.readValue(body, MultipleHlrResponse.class);
         } catch (Exception e) {
             log.error("Failed to read MultipleHlrResponse from string!", e);
-            return null;
+            throw new BsgException(e);
         }
     }
 
     private HlrInfo mapOkHttpResponseBodyToHlrInfo(ResponseBody responseBody) {
         try {
-            return objectMapper.readValue(responseBody.string(), HlrInfo.class);
+            final String body = responseBody.string();
+            log.info("HLR Info response received with body: {}", body);
+
+            return objectMapper.readValue(body, HlrInfo.class);
         } catch (JsonProcessingException e) {
             final String originalResponseBody = (String) e.getLocation().getSourceRef();
             log.error("Can't deserialize to HlrInfo: ({})", originalResponseBody);
 
             throw new BsgException(e);
         } catch (Exception e) {
-            log.error("Something went wrong when deserialize to HlrInfo!");
+            log.error("Something went wrong when deserialize to HlrInfo!", e);
             throw new BsgException(e);
         }
     }
@@ -151,7 +159,7 @@ public class BsgApiClient {
 
             throw new BsgException(e);
         } catch (Exception e) {
-            log.error("Something went wrong when deserialize to BalanceResponse!");
+            log.error("Something went wrong when deserialize to BalanceResponse!", e);
             throw new BsgException(e);
         }
     }
