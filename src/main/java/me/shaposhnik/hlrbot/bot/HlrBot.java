@@ -17,15 +17,11 @@ import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
-import static java.util.function.Predicate.not;
 import static me.shaposhnik.hlrbot.bot.enums.Command.*;
 import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 
@@ -34,8 +30,7 @@ import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 @RequiredArgsConstructor
 public class HlrBot extends AbstractTelegramBot {
     private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(
-        List.of(HLR, ID),
-        List.of(FILE, FILE_ID),
+        List.of(HLR, ID, FILE),
         List.of(BALANCE, CHANGE_API_KEY),
         List.of(DISCARD_STATE)
     );
@@ -125,9 +120,6 @@ public class HlrBot extends AbstractTelegramBot {
         } else if (state == SENDING_FILE) {
             handleSendingFileState(message, botUser);
 
-        } else if (state == SENDING_FILE_ID) {
-            handleSendingFileIdState(message, botUser);
-
         } else {
             throw new IllegalStateException("Unhandled state is present");
         }
@@ -153,7 +145,7 @@ public class HlrBot extends AbstractTelegramBot {
             try {
                 downloadDocumentToTempFile(document, Path.of(fileDownloadDirectory)).ifPresent(file -> {
                     List<Phone> phones = fileService.readPhones(file);
-                    List<SentHlr> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
+                    List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
 
                     sendMessageWithButtons(botUser.getId(), null, replyKeyboardMarkup);
@@ -167,24 +159,6 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setState(ACTIVE);
             botUserService.update(botUser);
 
-        } else {
-            handleIncomeCommand(DISCARD_STATE, botUser);
-        }
-    }
-
-    private void handleSendingFileIdState(Message message, BotUser botUser) {
-        if (notDiscardStateCommand(message)) {
-            final ReplyKeyboardMarkup replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
-
-            try {
-                sendMessageWithButtons(botUser.getId(), null, replyKeyboardMarkup);
-
-            } catch (BaseException e) {
-                sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
-            }
-
-            botUser.setState(ACTIVE);
-            botUserService.update(botUser);
         } else {
             handleIncomeCommand(DISCARD_STATE, botUser);
         }
@@ -342,26 +316,6 @@ public class HlrBot extends AbstractTelegramBot {
             throw new IllegalStateException("Unhandled command is present");
         }
 
-    }
-
-    private ReplyKeyboardMarkup createReplyKeyboardMarkup(List<List<Command>> keyboard) {
-        var keyboardRows = keyboard.stream()
-            .filter(not(List::isEmpty))
-            .map(this::mapCommandsListToKeyboardRow)
-            .collect(Collectors.toList());
-
-        return ReplyKeyboardMarkup.builder()
-            .clearKeyboard()
-            .keyboard(keyboardRows)
-            .resizeKeyboard(true)
-            .build();
-    }
-
-    private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
-        var row = new KeyboardRow();
-        commandList.stream().map(Command::asButton).forEach(row::add);
-
-        return row;
     }
 
 }

@@ -25,6 +25,7 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
     private static final String STATUS_RECEIVED_AT = "Status received at";
     private static final String DETAILS = "Details";
     private static final String OTHER_PROPERTIES = "Other properties";
+    private static final String ERROR = "Error";
     private static final String COLON_SPACE = ": ";
     private static final String TAB = "    ";
     private static final char EOL = '\n';
@@ -35,6 +36,10 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
         final String requestedPhoneNumber = Optional.ofNullable(hlr.getPhone())
             .map(Phone::getRawNumberValue)
             .orElse("-");
+
+        if (hlr.getErrorDescription() != null) {
+            return buildErrorMessage(hlr.getErrorDescription(), requestedPhoneNumber);
+        }
 
         var mainBuilder = new StringBuilder()
             .append(bold(REQUESTED_PHONE_NUMBER)).append(COLON_SPACE).append(requestedPhoneNumber).append(EOL)
@@ -69,6 +74,10 @@ public class HlrToTelegramResponseConverter implements Converter<Hlr, String> {
         }
 
         return mainBuilder.toString();
+    }
+
+    private String buildErrorMessage(String errorMessage, String requestedPhoneNumber) {
+        return bold(REQUESTED_PHONE_NUMBER) + COLON_SPACE + requestedPhoneNumber + EOL + bold(ERROR) + COLON_SPACE + errorMessage + EOL;
     }
     
     private String bold(String text) {

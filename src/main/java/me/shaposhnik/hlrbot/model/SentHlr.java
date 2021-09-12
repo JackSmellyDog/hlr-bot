@@ -1,8 +1,11 @@
 package me.shaposhnik.hlrbot.model;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SentHlr {
 
     private final String id;
@@ -12,12 +15,6 @@ public class SentHlr {
 
     public boolean isSuccessful() {
         return id != null;
-    }
-
-    private SentHlr(String id, Phone phone, String errorDescription) {
-        this.id = id;
-        this.phone = phone;
-        this.errorDescription = errorDescription;
     }
 
     public static SentHlr of(String id, Phone phone) {
