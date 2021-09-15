@@ -106,6 +106,8 @@ public class BsgApiClient {
     private <T extends Collection<HrlRequest>> Request createHlrOkHttpRequest(T hrlRequests, ApiKey apiKey) {
         try {
             final String payload = objectMapper.writeValueAsString(hrlRequests);
+            log.info("Request payload is: '{}'", payload);
+
             final var requestBody = RequestBody.create(payload, APPLICATION_JSON);
 
             return new Request.Builder()

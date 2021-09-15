@@ -69,6 +69,7 @@ public class BsgHlrService implements HlrAsyncService {
     }
 
     private SentHlr mapHlrResponseToSentHlr(HlrResponse hlrResponse, Map<String, Phone> referenceToPhoneMap) {
+        // TODO: 9/16/21 add reference to SentHlr
         final var apiErrorCode = fromErrorCode(hlrResponse.getError());
         final var phone = referenceToPhoneMap.get(hlrResponse.getReference());
 

@@ -1,21 +1,19 @@
 package me.shaposhnik.hlrbot.files;
 
-import lombok.experimental.UtilityClass;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
-@UtilityClass
+@Component
 public class FileExtensionResolver {
-    private static final Map<String, String> MIME_TYPE_TO_FILE_EXTENSION = Map.of(
+
+    // TODO: 9/16/21 to configuration
+    private final Map<String, String> mimeTypeToFileExtension = Map.of(
         "text/plain", "txt",
         "text/csv", "csv"
     );
 
-    public static String resolveExtensionOrDefault(String mimeType, String defaultExtension) {
-        return MIME_TYPE_TO_FILE_EXTENSION.getOrDefault(mimeType, defaultExtension);
-    }
-
-    public static String resolveExtensionOrDefaultWithDot(String mimeType, String defaultExtension) {
-        return String.format(".%s", resolveExtensionOrDefault(mimeType, defaultExtension));
+    public String resolveExtensionOrDefault(String mimeType, String defaultExtension) {
+        return mimeTypeToFileExtension.getOrDefault(mimeType, defaultExtension);
     }
 }

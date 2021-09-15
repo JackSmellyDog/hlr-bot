@@ -13,6 +13,6 @@ public interface HlrAsyncService extends HlrService {
     CompletableFuture<Hlr> getHlrInfoAsync(SentHlr sentHlr, String token);
 
     @Async
-    CompletableFuture<List<Hlr>> getHlrInfoListAsync(List<SentHlr> hlrIdPhonePairs, String token);
+    CompletableFuture<List<Hlr>> getHlrInfoListAsync(List<SentHlr> sentHlrList, String token);
 
 }

@@ -10,7 +10,6 @@ public enum Command {
     HLR("/hlr", "\uD83E\uDD84", "HLR"),
     ID("/id", "\uD83D\uDD0D", "ID"),
     FILE("/file", "\uD83D\uDCC4", "FILE"),
-    FILE_ID("/file_id", "\uD83D\uDDC4", "File ID"),
     BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
     CHANGE_API_KEY("/change_api_key", "\uD83D\uDDDD", "Change Api Key"),
     DISCARD_STATE("/discard_state", "\uD83E\uDDF9", "Discard State");

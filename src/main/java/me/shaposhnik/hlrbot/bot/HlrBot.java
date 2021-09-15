@@ -17,7 +17,10 @@ import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletionException;
@@ -44,8 +47,7 @@ public class HlrBot extends AbstractTelegramBot {
     private static final String TOO_MANY_PHONES_MESSAGE_TEMPLATE =
         "Phone(s): %s was/were ignored. Please, send them in the next request.";
 
-    private static final String FILE_MESSAGE = "File message";
-    private static final String FILE_ID_MESSAGE = "File id message";
+    private static final String FILE_MESSAGE = "Send me a file with phone numbers!";
     private static final String NO_FILES_IN_MESSAGE = "Your message has no files attached!";
     private static final String TOO_LARGE_FILE_TEMPLATE = "The file is too large! Files which weight more than %s MB are not allowed!";
 
@@ -143,14 +145,25 @@ public class HlrBot extends AbstractTelegramBot {
             }
 
             try {
-                downloadDocumentToTempFile(document, Path.of(fileDownloadDirectory)).ifPresent(file -> {
-                    List<Phone> phones = fileService.readPhones(file);
+                getTelegramUrlFilePath(document.getFileId()).ifPresentOrElse(telegramFilePath -> {
+                    final String fileExtension = fileService.getFileExtensionByMimeType(document.getMimeType());
+                    final Path directory = Path.of(fileDownloadDirectory);
+
+                    final File downloadedFile = downloadFile(telegramFilePath, document.getFileUniqueId(), fileExtension, directory);
+                    List<Phone> phones = fileService.readPhones(downloadedFile);
+                    downloadedFile.delete();
+
                     List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
+                    // TODO: 9/16/21 replace with message with file
+                    hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey())
+                        .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
 
-                    sendMessageWithButtons(botUser.getId(), null, replyKeyboardMarkup);
+                }, () -> {
+                    String errorMessage = "No Telegram File Path was retrieved";
+                    log.error(errorMessage);
+                    sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
                 });
-
 
             } catch (BaseException e) {
                 sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
@@ -161,6 +174,17 @@ public class HlrBot extends AbstractTelegramBot {
 
         } else {
             handleIncomeCommand(DISCARD_STATE, botUser);
+        }
+    }
+
+    private File downloadFile(String telegramUrlFilePath, String name, String extension, Path directory) {
+        try {
+            File tempFile = File.createTempFile(name, String.format(".%s", extension), directory.toFile());
+            return downloadFile(telegramUrlFilePath, tempFile);
+        } catch (IOException | TelegramApiException e) {
+            log.error("Failed to create temp file! Name: ({}), Extension: ({})", name, extension, e);
+            // TODO: 9/16/21 custom exception
+            throw new RuntimeException(e);
         }
     }
 
@@ -226,9 +250,9 @@ public class HlrBot extends AbstractTelegramBot {
                     sendMessageWithButtons(botUser.getId(), tooManyPhonesMessage, replyKeyboardMarkup);
                 }
 
-                List<SentHlr> hlrIdPhonePairs = hlrService.sendHlrs(phones, botUser.getApiKey());
+                List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
-                hlrService.getHlrInfoListAsync(hlrIdPhonePairs, botUser.getApiKey())
+                hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey())
                     .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
 
             } catch (BaseException e) {
@@ -257,7 +281,7 @@ public class HlrBot extends AbstractTelegramBot {
             sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
 
         } else {
-            log.error("Error!", error);
+            log.error("Unexpected error:", error);
         }
     }
 
@@ -303,11 +327,7 @@ public class HlrBot extends AbstractTelegramBot {
 
             botUser.setState(SENDING_FILE);
             botUserService.update(botUser);
-        } else if (command == FILE_ID) {
-            sendMessageWithButtons(botUser.getId(), FILE_ID_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
-            botUser.setState(SENDING_FILE_ID);
-            botUserService.update(botUser);
         } else if (command == BALANCE) {
             Balance balance = accountService.checkBalance(ApiKey.of(botUser.getApiKey()));
 

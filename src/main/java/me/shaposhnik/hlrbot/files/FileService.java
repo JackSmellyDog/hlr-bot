@@ -14,6 +14,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FileService {
+
+    private final FileExtensionResolver fileExtensionResolver;
     private final PhoneFileReaderResolver phoneFileReaderResolver;
 
     public List<Phone> readPhones(File file) {
@@ -21,6 +23,10 @@ public class FileService {
         final var reader = phoneFileReaderResolver.resolve(extension);
 
         return reader.readPhones(file);
+    }
+
+    public String getFileExtensionByMimeType(String mimeType) {
+        return fileExtensionResolver.resolveExtensionOrDefault(mimeType, "txt");
     }
 
 }

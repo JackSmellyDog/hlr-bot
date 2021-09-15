@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,10 +13,12 @@ import java.util.Map;
 public class PhoneFileReaderResolver {
 
     private final List<PhonesFileReader> readers;
-    private final Map<String, PhonesFileReader> extensionToFileReaderMap;
+    private Map<String, PhonesFileReader> extensionToFileReaderMap;
 
     @PostConstruct
     private void initExtensionToFileReaderMap() {
+        extensionToFileReaderMap = new HashMap<>();
+        // TODO: 9/16/21 refactor, add other method
         readers.forEach(reader -> reader.getSupportedFileExtensions().stream()
             .map(String::toLowerCase)
             .forEach(extension -> extensionToFileReaderMap.put(extension, reader)));
