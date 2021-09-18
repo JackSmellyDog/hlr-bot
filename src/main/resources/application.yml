@@ -37,3 +37,9 @@ integration:
     async-hlr-info:
       limit: 10
       pause: 1000
+
+files:
+  mime-type-to-file-extension:
+    '[text/plain]': txt
+    '[text/csv]': csv
+    '[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet]': xlsx

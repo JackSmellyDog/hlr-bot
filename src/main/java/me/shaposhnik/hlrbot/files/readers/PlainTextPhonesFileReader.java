@@ -2,6 +2,7 @@ package me.shaposhnik.hlrbot.files.readers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.files.exception.ReadFileException;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.stereotype.Component;
@@ -35,7 +36,7 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
 
         } catch (IOException e) {
             log.error("Can't read a file {}.", file.getName(), e);
-            throw new RuntimeException(e);
+            throw new ReadFileException(e);
         }
     }
 

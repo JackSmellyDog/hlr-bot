@@ -4,6 +4,7 @@ import me.shaposhnik.hlrbot.model.Phone;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,7 +25,11 @@ public class PhoneService {
             return List.of();
         }
 
-        return Stream.of(text.split(SEPARATORS_REGEX))
+        return toPhones(Arrays.asList(text.split(SEPARATORS_REGEX)));
+    }
+
+    public List<Phone> toPhones(List<String> plainPhones) {
+        return plainPhones.stream()
             .filter(Objects::nonNull)
             .filter(not(String::isEmpty))
             .map(String::trim)
