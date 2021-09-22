@@ -10,6 +10,8 @@ import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.model.SentHlr;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
+import org.apache.commons.collections4.ListUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -31,6 +33,9 @@ public class BsgHlrService implements HlrAsyncService {
     private final HlrStatuses hlrStatuses;
     private final HlrInfoSettings hlrInfoSettings;
 
+    @Value("${bsg.max-hlrs-per-request:1000}")
+    private int maxNumberOfHlrsPerRequest;
+
     @Override
     public SentHlr sendHlr(Phone phone, String token) {
         final String reference = referenceGenerator.generateReference();
@@ -46,7 +51,14 @@ public class BsgHlrService implements HlrAsyncService {
     }
 
     @Override
-    public <T extends Collection<Phone>> List<SentHlr> sendHlrs(T phones, String token) {
+    public List<SentHlr> sendHlrs(List<Phone> phones, String token) {
+        return ListUtils.partition(phones, maxNumberOfHlrsPerRequest).stream()
+            .map(pack -> sendOnePackOfHlrs(pack, token))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+    }
+
+    private List<SentHlr> sendOnePackOfHlrs(List<Phone> phones, String token) {
         final Map<String, Phone> referenceToPhoneMap = phones.stream()
             .collect(Collectors.toMap(phone -> referenceGenerator.generateReference(), Function.identity()));
 
@@ -222,7 +234,6 @@ public class BsgHlrService implements HlrAsyncService {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            log.error("I can't sleep!!!", e);
             Thread.currentThread().interrupt();
         }
     }
