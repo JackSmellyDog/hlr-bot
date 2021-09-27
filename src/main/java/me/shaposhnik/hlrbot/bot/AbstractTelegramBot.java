@@ -2,16 +2,20 @@ package me.shaposhnik.hlrbot.bot;
 
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
+import me.shaposhnik.hlrbot.files.exception.DownloadFileException;
+import me.shaposhnik.hlrbot.files.exception.UploadFileException;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
@@ -20,12 +24,12 @@ import static java.util.function.Predicate.not;
 public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     public void sendSimpleMessage(String chatId, String text) {
-        try {
-            SendMessage sendMessage = SendMessage.builder()
-                .text(text)
-                .chatId(chatId)
-                .build();
+        var sendMessage = SendMessage.builder()
+            .text(text)
+            .chatId(chatId)
+            .build();
 
+        try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
             log.error("Something went wrong while sending message:", e);
@@ -37,13 +41,13 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
     }
 
     public void sendMessageWithHTML(String chatId, String html) {
-        try {
-            SendMessage sendMessage = SendMessage.builder()
-                .parseMode(ParseMode.HTML)
-                .text(html)
-                .chatId(chatId)
-                .build();
+        var sendMessage = SendMessage.builder()
+            .parseMode(ParseMode.HTML)
+            .text(html)
+            .chatId(chatId)
+            .build();
 
+        try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
             log.error("Something went wrong while sending message with html", e);
@@ -51,14 +55,14 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
     }
 
     public void sendMessageWithButtons(String chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
-        try {
-            SendMessage sendMessage = SendMessage.builder()
-                .parseMode(ParseMode.MARKDOWN)
-                .text(text)
-                .chatId(chatId)
-                .replyMarkup(replyKeyboardMarkup)
-                .build();
+        var sendMessage = SendMessage.builder()
+            .parseMode(ParseMode.MARKDOWN)
+            .text(text)
+            .chatId(chatId)
+            .replyMarkup(replyKeyboardMarkup)
+            .build();
 
+        try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
             log.error("Something went wrong while sending message with buttons", e);
@@ -69,18 +73,46 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
         sendMessageWithButtons(Long.toString(chatId), text, replyKeyboardMarkup);
     }
 
-    protected Optional<String> getTelegramUrlFilePath(String fileId) {
+    private String getTelegramUrlFilePath(String fileId) {
         final GetFile getFile = new GetFile();
         getFile.setFileId(fileId);
 
         try {
-            return Optional.of(execute(getFile).getFilePath());
+            return execute(getFile).getFilePath();
         } catch (TelegramApiException e) {
             log.error("Something went wrong while getting a file path in Telegram", e);
-            return Optional.empty();
+            throw new DownloadFileException(e);
         }
     }
 
+    protected Path downloadFile(String fileId, Path pathToFile) {
+        try {
+            final String telegramUrlFilePath = getTelegramUrlFilePath(fileId);
+
+            return downloadFile(telegramUrlFilePath, pathToFile.toFile()).toPath();
+        } catch (TelegramApiException e) {
+            log.error("Failed to download file!", e);
+            throw new DownloadFileException(e);
+        }
+    }
+
+    protected void sendFile(String chatId, Path pathToFile) {
+        var inputFile = new InputFile()
+            .setMedia(pathToFile.toFile());
+
+        var sendDocument = new SendDocument();
+        sendDocument.setChatId(chatId);
+        sendDocument.setDocument(inputFile);
+
+        try {
+            execute(sendDocument);
+        } catch (TelegramApiException e) {
+            log.error("Something went wrong while uploading a file to Telegram", e);
+            throw new UploadFileException(e);
+        }
+    }
+
+    // TODO: 9/27/21 should not be into this class
     protected ReplyKeyboardMarkup createReplyKeyboardMarkup(List<List<Command>> keyboard) {
         var keyboardRows = keyboard.stream()
             .filter(not(List::isEmpty))
@@ -94,6 +126,7 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
             .build();
     }
 
+    // TODO: 9/27/21 should not be into this class
     private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
         var row = new KeyboardRow();
         commandList.stream().map(Command::asButton).forEach(row::add);

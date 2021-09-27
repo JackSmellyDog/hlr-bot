@@ -3,13 +3,13 @@ package me.shaposhnik.hlrbot.files;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.files.properties.FilesProperties;
-import me.shaposhnik.hlrbot.files.readers.PhoneFileReaderFacade;
-import me.shaposhnik.hlrbot.model.Phone;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 
 @Slf4j
 @Service
@@ -17,15 +17,21 @@ import java.util.List;
 public class FileService {
 
     private final FilesProperties filesProperties;
-    private final PhoneFileReaderFacade phoneFileReaderFacade;
-
-    public List<Phone> readPhones(File file) {
-        final String extension = FilenameUtils.getExtension(file.getName());
-        return phoneFileReaderFacade.readPhones(file, extension);
-    }
 
     public String getFileExtensionByMimeType(String mimeType) {
         return filesProperties.resolveExtension(mimeType);
+    }
+
+    public String getExtension(String filename) {
+        return FilenameUtils.getExtension(filename);
+    }
+
+    public void deleteFile(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

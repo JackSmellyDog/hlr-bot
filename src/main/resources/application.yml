@@ -40,6 +40,7 @@ integration:
       pause: 1000
 
 files:
+  csv-file-writer-separator: ;
   mime-type-to-file-extension:
     '[text/plain]': txt
     '[text/csv]': csv

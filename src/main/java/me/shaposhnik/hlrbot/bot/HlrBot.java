@@ -6,7 +6,8 @@ import me.shaposhnik.hlrbot.bot.enums.Command;
 import me.shaposhnik.hlrbot.converter.HlrToTelegramResponseConverter;
 import me.shaposhnik.hlrbot.exception.BaseException;
 import me.shaposhnik.hlrbot.files.FileService;
-import me.shaposhnik.hlrbot.files.exception.DownloadFileException;
+import me.shaposhnik.hlrbot.files.readers.PhoneFileReaderFacade;
+import me.shaposhnik.hlrbot.files.writers.HlrResultFileWriterFacade;
 import me.shaposhnik.hlrbot.integration.bsg.BsgAccountService;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
 import me.shaposhnik.hlrbot.model.*;
@@ -18,14 +19,14 @@ import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.CompletionException;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.*;
 
 import static me.shaposhnik.hlrbot.bot.enums.Command.*;
 import static me.shaposhnik.hlrbot.model.enums.UserState.*;
@@ -60,6 +61,8 @@ public class HlrBot extends AbstractTelegramBot {
     private final HlrToTelegramResponseConverter hlrToTelegramResponseConverter;
     private final FileService fileService;
     private final PhoneService phoneService;
+    private final PhoneFileReaderFacade phoneFileReaderFacade;
+    private final HlrResultFileWriterFacade hlrResultFileWriterFacade;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -148,25 +151,12 @@ public class HlrBot extends AbstractTelegramBot {
             }
 
             try {
-                getTelegramUrlFilePath(document.getFileId()).ifPresentOrElse(telegramFilePath -> {
-                    final String fileExtension = fileService.getFileExtensionByMimeType(document.getMimeType());
-                    final Path directory = Path.of(fileDownloadDirectory);
+                final List<Phone> phones = readPhones(document);
 
-                    final File downloadedFile = downloadFile(telegramFilePath, document.getFileUniqueId(), fileExtension, directory);
-                    List<Phone> phones = fileService.readPhones(downloadedFile);
-                    deleteFile(downloadedFile);
+                List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
-                    List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
-
-                    // TODO: 9/16/21 replace with message with file
-                    hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey())
-                        .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
-
-                }, () -> {
-                    final String errorMessage = "No Telegram File Path was retrieved";
-                    log.error(errorMessage);
-                    sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
-                });
+                hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey()).whenComplete((result, error) ->
+                        whenHlrInfoCompleteSendAnswerAsFile(botUser.getId(), document.getFileName(), result, error));
 
             } catch (BaseException e) {
                 log.error("!", e);
@@ -181,21 +171,43 @@ public class HlrBot extends AbstractTelegramBot {
         }
     }
 
-    private void deleteFile(File file) {
+    private List<Phone> readPhones(Document document) {
+        Path downloaded = null;
+
         try {
-            Files.delete(file.toPath());
+            downloaded = downloadFile(
+                document.getFileId(),
+                Files.createTempFile(Path.of(fileDownloadDirectory), document.getFileUniqueId(), document.getFileName())
+            );
+
+            return phoneFileReaderFacade.readPhones(downloaded);
+
         } catch (IOException e) {
-            log.error("Failed to delete a file!", e);
+            log.error("!", e);
+            throw new RuntimeException(e);
+        } finally {
+            Optional.ofNullable(downloaded).ifPresent(fileService::deleteFile);
         }
     }
 
-    private File downloadFile(String telegramUrlFilePath, String name, String extension, Path directory) {
+    private void sendResultFile(Long telegramId, String fileName, List<Hlr> hlrList) {
+        Path responseFile = null;
+
+        // TODO: 9/28/21 figure out something better
+        fileName = fileName + ".csv";
+
         try {
-            File tempFile = File.createTempFile(name, String.format(".%s", extension), directory.toFile());
-            return downloadFile(telegramUrlFilePath, tempFile);
-        } catch (IOException | TelegramApiException e) {
-            log.error("Failed to create temp file! Name: ({}), Extension: ({})", name, extension, e);
-            throw new DownloadFileException(e);
+            String prefix = UUID.randomUUID().toString();
+            responseFile = hlrResultFileWriterFacade
+                .write(Files.createTempFile(Path.of(fileDownloadDirectory), prefix, fileName), hlrList);
+
+            sendFile(String.valueOf(telegramId), responseFile);
+
+        } catch (IOException e) {
+            log.error("!", e);
+            throw new RuntimeException(e);
+        } finally {
+            Optional.ofNullable(responseFile).ifPresent(fileService::deleteFile);
         }
     }
 
@@ -285,6 +297,22 @@ public class HlrBot extends AbstractTelegramBot {
                 .map(hlrToTelegramResponseConverter::convert)
                 .forEach(response -> sendMessageWithButtons(telegramId, response, replyKeyboardMarkup));
 
+        } else if (error instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
+
+        } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
+
+        } else {
+            log.error("Unexpected error:", error);
+        }
+    }
+
+    private void whenHlrInfoCompleteSendAnswerAsFile(Long telegramId, String fileName, List<Hlr> result, Throwable error) {
+        final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
+
+        if (result != null) {
+            sendResultFile(telegramId, fileName, result);
         } else if (error instanceof BaseException) {
             sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
 
