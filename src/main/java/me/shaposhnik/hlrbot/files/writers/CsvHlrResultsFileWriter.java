@@ -2,6 +2,9 @@ package me.shaposhnik.hlrbot.files.writers;
 
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.model.Hlr;
+import me.shaposhnik.hlrbot.model.enums.Ported;
+import me.shaposhnik.hlrbot.model.enums.Roaming;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -9,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,9 +46,9 @@ public class CsvHlrResultsFileWriter implements HlrResultsFileWriter {
     private String mapHlrToRow(Hlr hlr) {
         final String rawNumberValue = hlr.getPhone().getRawNumberValue();
         final String msisdn = hlr.getMsisdn();
-        final String status = hlr.getStatus();
-        final String ported = hlr.getPorted().toString();
-        final String roaming = hlr.getRoaming().toString();
+        final String status = StringUtils.capitalize(hlr.getStatus());
+        final String ported = Optional.ofNullable(hlr.getPorted()).map(Ported::toString).orElse("-");
+        final String roaming = Optional.ofNullable(hlr.getRoaming()).map(Roaming::toString).orElse("-");
         final String network = hlr.getNetwork();
 
         return List.of(rawNumberValue, msisdn, status, ported, roaming, network)
@@ -53,6 +57,6 @@ public class CsvHlrResultsFileWriter implements HlrResultsFileWriter {
 
     @Override
     public Set<String> getSupportedFileExtensions() {
-        return Set.of("txt", "csv", "xlsx", "xls");
+        return Set.of("txt", "csv");
     }
 }

@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
 
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -173,40 +172,40 @@ public class HlrBot extends AbstractTelegramBot {
 
     private List<Phone> readPhones(Document document) {
         Path downloaded = null;
+        Path tempFile = null;
 
         try {
-            downloaded = downloadFile(
-                document.getFileId(),
-                Files.createTempFile(Path.of(fileDownloadDirectory), document.getFileUniqueId(), document.getFileName())
-            );
+            tempFile = Files.createTempFile(Path.of(fileDownloadDirectory), document.getFileUniqueId(), document.getFileName());
+            downloaded = downloadFile(document.getFileId(), tempFile);
 
             return phoneFileReaderFacade.readPhones(downloaded);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("!", e);
             throw new RuntimeException(e);
         } finally {
+            Optional.ofNullable(tempFile).ifPresent(fileService::deleteFile);
             Optional.ofNullable(downloaded).ifPresent(fileService::deleteFile);
         }
     }
 
     private void sendResultFile(Long telegramId, String fileName, List<Hlr> hlrList) {
         Path responseFile = null;
-
-        // TODO: 9/28/21 figure out something better
-        fileName = fileName + ".csv";
+        Path tempFile = null;
+        String extension = String.format(".%s", fileService.getExtension(fileName));
 
         try {
-            String prefix = UUID.randomUUID().toString();
-            responseFile = hlrResultFileWriterFacade
-                .write(Files.createTempFile(Path.of(fileDownloadDirectory), prefix, fileName), hlrList);
+            String prefix = UUID.randomUUID().toString().replace("-", "");
+            tempFile = Files.createTempFile(Path.of(fileDownloadDirectory), prefix, extension);
+            responseFile = hlrResultFileWriterFacade.write(tempFile, hlrList);
 
             sendFile(String.valueOf(telegramId), responseFile);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("!", e);
             throw new RuntimeException(e);
         } finally {
+            Optional.ofNullable(tempFile).ifPresent(fileService::deleteFile);
             Optional.ofNullable(responseFile).ifPresent(fileService::deleteFile);
         }
     }
