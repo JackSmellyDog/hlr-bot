@@ -1,6 +1,7 @@
 package me.shaposhnik.hlrbot.files.writers;
 
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import me.shaposhnik.hlrbot.model.Hlr;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,7 +25,7 @@ public class XlsxHlrResultsFileWriter implements HlrResultsFileWriter {
     private static final String SHEET_NAME = "Results";
 
     @Override
-    public Path write(Path path, List<Hlr> hlrRowList) {
+    public FileEntity write(FileEntity fileEntity, List<Hlr> hlrRowList) {
         try(XSSFWorkbook workbook = new XSSFWorkbook()) {
             var sheet = workbook.createSheet(SHEET_NAME);
             createHeader(sheet);
@@ -44,13 +44,13 @@ public class XlsxHlrResultsFileWriter implements HlrResultsFileWriter {
                 rowId++;
             }
 
-            workbook.write(new FileOutputStream(path.toFile()));
+            workbook.write(new FileOutputStream(fileEntity.toFile()));
 
         } catch (IOException e) {
             log.error("Failed to write xlsx file!", e);
         }
 
-        return path;
+        return fileEntity;
     }
 
     private void createHeader(XSSFSheet sheet) {

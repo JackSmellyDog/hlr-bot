@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -90,6 +91,17 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
             final String telegramUrlFilePath = getTelegramUrlFilePath(fileId);
 
             return downloadFile(telegramUrlFilePath, pathToFile.toFile()).toPath();
+        } catch (TelegramApiException e) {
+            log.error("Failed to download file!", e);
+            throw new DownloadFileException(e);
+        }
+    }
+
+    protected InputStream downloadFileAsInputStream(String fileId) {
+        try {
+            final String telegramUrlFilePath = getTelegramUrlFilePath(fileId);
+
+            return downloadFileAsStream(telegramUrlFilePath);
         } catch (TelegramApiException e) {
             log.error("Failed to download file!", e);
             throw new DownloadFileException(e);

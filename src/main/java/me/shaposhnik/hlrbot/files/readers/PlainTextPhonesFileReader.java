@@ -3,12 +3,12 @@ package me.shaposhnik.hlrbot.files.readers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.files.exception.ReadFileException;
+import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
@@ -24,9 +24,9 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
     private final PhoneService phoneService;
 
     @Override
-    public List<Phone> readPhones(File file) {
+    public List<Phone> readPhones(FileEntity fileEntity) {
 
-        try (BufferedReader br = Files.newBufferedReader(file.toPath())) {
+        try (BufferedReader br = Files.newBufferedReader(fileEntity.toPath())) {
 
             return br.lines()
                 .map(phoneService::parseFromString)
@@ -35,7 +35,7 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
                 .collect(Collectors.toList());
 
         } catch (IOException e) {
-            log.error("Can't read a file {}.", file.getName(), e);
+            log.error("Can't read a file {}.", fileEntity.getReceivedFileName(), e);
             throw new ReadFileException(e);
         }
     }

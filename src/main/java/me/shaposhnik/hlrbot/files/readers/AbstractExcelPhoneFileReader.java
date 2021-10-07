@@ -2,6 +2,7 @@ package me.shaposhnik.hlrbot.files.readers;
 
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.files.exception.ReadFileException;
+import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import me.shaposhnik.hlrbot.model.Phone;
 import me.shaposhnik.hlrbot.service.PhoneService;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,16 +15,16 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 @Slf4j
 public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
 
-    protected static final Set<String> PHONES_COLUMN_HEADERS_REGEX = Set.of(
+    private static final Set<String> PHONES_COLUMN_HEADERS_REGEX = Set.of(
         ".*phone.*", ".*number.*", ".*телефон.*", ".*номер.*"
     );
-    protected static final int FIRST_DOCUMENT_SHEET = 0;
-    protected static final int HEADER_ROW_INDEX = 0;
+    private static final int FIRST_DOCUMENT_SHEET = 0;
+    private static final int HEADER_ROW_INDEX = 0;
 
     private PhoneService phoneService;
 
@@ -35,27 +36,24 @@ public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
     }
 
     @Override
-    public List<Phone> readPhones(File file) {
-        final Map<Integer, List<String>> content = readExcelFile(file);
-        final List<String> headers = content.getOrDefault(HEADER_ROW_INDEX, Collections.emptyList());
-        final int phoneColumnIndex = findIndexOfPhoneColumnByHeader(headers);
-        final List<String> phoneColumnData = readColumnByIndexIgnoreHeader(content, phoneColumnIndex);
+    public List<Phone> readPhones(FileEntity fileEntity) {
+        final List<String> phoneColumnData = readPhoneColumn(fileEntity.toFile());
 
         return phoneService.toPhones(phoneColumnData);
     }
 
-    protected Map<Integer, List<String>> readExcelFile(File file) {
+    private List<String> readPhoneColumn(File file) {
         try (Workbook workbook = createWorkbook(file)) {
             Sheet sheet = workbook.getSheetAt(FIRST_DOCUMENT_SHEET);
-            Map<Integer, List<String>> result = new HashMap<>();
 
-            int i = 0;
-            for (Row row : sheet) {
-                result.put(i, new ArrayList<>());
-                for (Cell cell : row) {
-                    result.get(i).add(mapCellValueToString(cell));
-                }
-                i++;
+            List<String> result = new ArrayList<>();
+            int indexOfPhoneColumn = findIndexOfPhoneColumn(sheet.getRow(HEADER_ROW_INDEX));
+
+            for (int i = 1; i < sheet.getLastRowNum(); i++) {
+                Optional.ofNullable(sheet.getRow(i))
+                    .map(row -> row.getCell(indexOfPhoneColumn))
+                    .map(this::mapCellValueToString)
+                    .ifPresent(result::add);
             }
 
             return result;
@@ -65,10 +63,12 @@ public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
         }
     }
 
-    protected int findIndexOfPhoneColumnByHeader(List<String> headers) {
-        for (int i = 0; i < headers.size(); i++) {
+    private int findIndexOfPhoneColumn(Row headerRow) {
+        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
             for (String phonesColumnHeadersRegex : PHONES_COLUMN_HEADERS_REGEX) {
-                if (headers.get(i).toLowerCase().matches(phonesColumnHeadersRegex)) {
+
+                final String header = mapCellValueToString(headerRow.getCell(i)).toLowerCase();
+                if (header.matches(phonesColumnHeadersRegex)) {
                     return i;
                 }
             }
@@ -77,14 +77,9 @@ public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
         return -1;
     }
 
-    protected List<String> readColumnByIndexIgnoreHeader(Map<Integer, List<String>> content, int index) {
-        return content.values().stream()
-            .skip(1)
-            .map(row -> row.get(index))
-            .collect(Collectors.toList());
-    }
+    private String mapCellValueToString(Cell cell) {
+        if (cell == null) return "";
 
-    protected String mapCellValueToString(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:
                 return cell.getStringCellValue();
