@@ -4,10 +4,11 @@ import lombok.Getter;
 
 import java.util.Objects;
 
+@Getter
 public class Phone {
 
-    @Getter
     private final String rawNumberValue;
+    private final String filteredNumber;
 
     public static Phone of(String rawNumberValue) {
         return new Phone(rawNumberValue);
@@ -15,10 +16,7 @@ public class Phone {
 
     private Phone(String rawNumberValue) {
         this.rawNumberValue = Objects.requireNonNull(rawNumberValue);
-    }
-
-    public String getFilteredNumber() {
-        return rawNumberValue.replaceAll("\\D", "");
+        this.filteredNumber = rawNumberValue.replaceAll("\\D", "");
     }
 
     @Override
@@ -31,11 +29,11 @@ public class Phone {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Phone phone = (Phone) o;
-        return Objects.equals(getFilteredNumber(), phone.getFilteredNumber());
+        return Objects.equals(filteredNumber, phone.getFilteredNumber());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getFilteredNumber());
+        return Objects.hash(filteredNumber);
     }
 }
