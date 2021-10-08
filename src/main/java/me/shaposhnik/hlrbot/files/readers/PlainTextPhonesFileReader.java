@@ -9,7 +9,6 @@ import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,7 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
                 .distinct()
                 .collect(Collectors.toList());
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Can't read a file {}.", fileEntity.getReceivedFileName(), e);
             throw new ReadFileException(e);
         }

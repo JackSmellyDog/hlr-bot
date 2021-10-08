@@ -108,9 +108,9 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    protected void sendFile(String chatId, Path pathToFile) {
+    protected void sendFile(String chatId, Path pathToFile, String fileName) {
         var inputFile = new InputFile()
-            .setMedia(pathToFile.toFile());
+            .setMedia(pathToFile.toFile(), fileName);
 
         var sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);

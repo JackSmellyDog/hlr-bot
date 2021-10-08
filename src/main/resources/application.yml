@@ -16,7 +16,6 @@ bot:
   limit-of-numbers: 3
   files:
     max-size: 5
-    directory-to-download: ./temp
 
 integration:
   urls:
@@ -41,8 +40,4 @@ integration:
 
 files:
   csv-file-writer-separator: ;
-  mime-type-to-file-extension:
-    '[text/plain]': txt
-    '[text/csv]': csv
-    '[application/vnd.openxmlformats-officedocument.spreadsheetml.sheet]': xlsx
-    '[application/vnd.ms-excel]': xls
+  storage-location: ./temp

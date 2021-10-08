@@ -271,7 +271,7 @@ public class HlrBot extends AbstractTelegramBot {
         if (result != null) {
             try {
                 FileEntity responseFile = hlrResultFileWriterFacade.write(requestFile, result);
-                sendFile(String.valueOf(telegramId), responseFile.toPath());
+                sendFile(String.valueOf(telegramId), responseFile.toPath(), responseFile.getReceivedFileName());
             } catch (Exception e) {
                 log.error("Failed to write result to the file!", e);
             }

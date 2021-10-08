@@ -24,9 +24,8 @@ public class LocalFileStorage implements FileStorage {
 
     private final FileRepository fileRepository;
 
-    // TODO: 10/7/21 make path for windows and unix-like
-    @Value("${bot.files.directory-to-download}")
-    private String fileDownloadDirectory;
+    @Value("${files.storage-location}")
+    private String storageLocation;
 
     @Override
     public FileEntity get(String id) {
@@ -68,7 +67,7 @@ public class LocalFileStorage implements FileStorage {
     }
 
     private String createFullPath(String realFileName) {
-        return fileDownloadDirectory + File.separator + realFileName;
+        return storageLocation + File.separator + realFileName;
     }
 
     @Override
