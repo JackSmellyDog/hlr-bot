@@ -50,6 +50,8 @@ public class HlrBot extends AbstractTelegramBot {
     private static final String FILE_MESSAGE = "Send me a file with phone numbers!";
     private static final String NO_FILES_IN_MESSAGE = "Your message has no files attached!";
     private static final String TOO_LARGE_FILE_TEMPLATE = "The file is too large! Files which weight more than %s MB are not allowed!";
+    private static final String TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE =
+        "Too many numbers in the file! There were %d numbers which is greater than %d allowed";
 
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
@@ -68,6 +70,9 @@ public class HlrBot extends AbstractTelegramBot {
 
     @Value("${bot.limit-of-numbers}")
     private int limitOfNumbers;
+
+    @Value("${bot.limit-of-numbers-in-file}")
+    private int limitOfNumbersInFile;
 
     @Value("#{${bot.files.max-size} * 1024}")
     private int maxFileSizeInBytes;
@@ -148,12 +153,18 @@ public class HlrBot extends AbstractTelegramBot {
             return;
         }
 
-        FileEntity downloadedFile = fileStorage.save(document, downloadFileAsInputStream(document.getFileId()));
-
         try {
+            FileEntity downloadedFile = fileStorage.save(document, downloadFileAsInputStream(document.getFileId()));
             final List<Phone> phones = phoneFileReaderFacade.readPhones(downloadedFile);
 
-            // TODO: 9/29/21 Limit of numbers
+            if (phones.size() > limitOfNumbersInFile) {
+                final String tooManyNumbersMessage =
+                    String.format(TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE,phones.size(), limitOfNumbersInFile);
+                sendMessageWithButtons(botUser.getId(), tooManyNumbersMessage, replyKeyboardMarkup);
+                return;
+            }
+
+            // TODO: 10/9/21 send messages about possible execution time
 
             List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 

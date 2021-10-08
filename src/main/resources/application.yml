@@ -14,6 +14,7 @@ bot:
   name:
   token:
   limit-of-numbers: 3
+  limit-of-numbers-in-file: 3000
   files:
     max-size: 5
 
