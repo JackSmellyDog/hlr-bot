@@ -49,7 +49,7 @@ public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
             List<String> result = new ArrayList<>();
             int indexOfPhoneColumn = findIndexOfPhoneColumn(sheet.getRow(HEADER_ROW_INDEX));
 
-            for (int i = 1; i < sheet.getLastRowNum(); i++) {
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Optional.ofNullable(sheet.getRow(i))
                     .map(row -> row.getCell(indexOfPhoneColumn))
                     .map(this::mapCellValueToString)

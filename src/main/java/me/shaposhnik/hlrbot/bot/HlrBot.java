@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.bot.enums.Command;
 import me.shaposhnik.hlrbot.converter.HlrToTelegramResponseConverter;
 import me.shaposhnik.hlrbot.exception.BaseException;
+import me.shaposhnik.hlrbot.files.enrichers.HlrResultFileEnricherFacade;
 import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import me.shaposhnik.hlrbot.files.readers.PhoneFileReaderFacade;
 import me.shaposhnik.hlrbot.files.storage.FileStorage;
@@ -64,6 +65,7 @@ public class HlrBot extends AbstractTelegramBot {
     private final PhoneService phoneService;
     private final PhoneFileReaderFacade phoneFileReaderFacade;
     private final HlrResultFileWriterFacade hlrResultFileWriterFacade;
+    private final HlrResultFileEnricherFacade hlrResultFileEnricherFacade;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -305,6 +307,10 @@ public class HlrBot extends AbstractTelegramBot {
             final String filename = "Result_" + responseFileName;
             sendFile(String.valueOf(telegramId), responseFile.toPath(), filename);
 
+            hlrResultFileEnricherFacade.enrich(requestFile, result).ifPresent(enrichedFile -> {
+                final String enrichedFilename = "Merged_" + requestFile.getReceivedFileName();
+                sendFile(String.valueOf(telegramId), enrichedFile.toPath(), enrichedFilename);
+            });
 
         } catch (Exception e) {
             log.error("Failed to write result to the file!", e);
