@@ -36,10 +36,10 @@ public class FileEntity {
     private String extension;
 
     @Column(nullable = false)
-    private String mimeType;
-
-    @Column(nullable = false)
     private boolean deleted = false;
+
+    @Column
+    private String mimeType;
 
     public Path toPath() {
         return Path.of(fullPath);

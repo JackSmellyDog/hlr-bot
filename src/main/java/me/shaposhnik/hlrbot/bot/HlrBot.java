@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 import static me.shaposhnik.hlrbot.bot.enums.Command.*;
@@ -52,6 +53,8 @@ public class HlrBot extends AbstractTelegramBot {
     private static final String TOO_LARGE_FILE_TEMPLATE = "The file is too large! Files which weight more than %s MB are not allowed!";
     private static final String TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE =
         "Too many numbers in the file! There were %d numbers which is greater than %d allowed";
+    private static final String PROCESSING_OF_FILE_TEMPLATE = "Processing of the file will take about %s minutes.";
+    public static final String DEFAULT_ERROR_MESSAGE = "Ooops! Something went wrong.";
 
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
@@ -74,11 +77,17 @@ public class HlrBot extends AbstractTelegramBot {
     @Value("${bot.limit-of-numbers-in-file}")
     private int limitOfNumbersInFile;
 
-    @Value("#{${bot.files.max-size} * 1024}")
+    @Value("#{${bot.files.max-size} * 1024 * 1024}")
     private int maxFileSizeInBytes;
 
     @Value("${bot.files.max-size}")
     private int maxFileSizeInMegabytes;
+
+    @Value("${bot.expected-execution-time-per-request-in-milliseconds}")
+    private int expectedExecutionTimePerRequest;
+
+    @Value("${bot.long-execution-message-value-in-minutes}")
+    private int longExecutionMessageValue;
 
     @Override
     public String getBotUsername() {
@@ -159,17 +168,25 @@ public class HlrBot extends AbstractTelegramBot {
 
             if (phones.size() > limitOfNumbersInFile) {
                 final String tooManyNumbersMessage =
-                    String.format(TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE,phones.size(), limitOfNumbersInFile);
+                    String.format(TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE, phones.size(), limitOfNumbersInFile);
                 sendMessageWithButtons(botUser.getId(), tooManyNumbersMessage, replyKeyboardMarkup);
                 return;
             }
 
-            // TODO: 10/9/21 send messages about possible execution time
+            long toMinutes = TimeUnit.MILLISECONDS.toMinutes(expectedExecutionTimePerRequest);
+            if (toMinutes >= longExecutionMessageValue) {
+                sendMessageWithButtons(botUser.getId(), String.format(PROCESSING_OF_FILE_TEMPLATE, toMinutes), replyKeyboardMarkup);
+            }
 
             List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
-            hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey()).whenComplete((result, error) ->
-                whenHlrInfoCompleteSendAnswerAsFile(botUser.getId(), downloadedFile, result, error));
+            hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey()).whenComplete((result, error) -> {
+                if (result != null) {
+                    whenHlrInfoCompleteSendAnswerAsFile(botUser.getId(), downloadedFile, result);
+                } else {
+                    handleError(botUser.getId(), error);
+                }
+            });
 
         } catch (BaseException e) {
             log.error("!", e);
@@ -178,6 +195,21 @@ public class HlrBot extends AbstractTelegramBot {
 
         botUser.setState(ACTIVE);
         botUserService.update(botUser);
+    }
+
+    private void handleError(Long telegramId, Throwable error) {
+        final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
+
+        if (error instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
+
+        } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
+            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
+
+        } else {
+            log.error("Unexpected error:", error);
+            sendMessageWithButtons(telegramId, DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
+        }
     }
 
     private void handleSendingApiKeyState(Message message, BotUser botUser) {
@@ -235,8 +267,13 @@ public class HlrBot extends AbstractTelegramBot {
 
             List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
-            hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey())
-                .whenComplete((result, error) -> whenHlrInfoComplete(botUser.getId(), result, error));
+            hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey()).whenComplete((result, error) -> {
+                if (result != null) {
+                    whenHlrInfoCompleteSuccessful(botUser.getId(), result);
+                } else {
+                    handleError(botUser.getId(), error);
+                }
+            });
 
         } catch (BaseException e) {
             sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
@@ -246,43 +283,36 @@ public class HlrBot extends AbstractTelegramBot {
         botUserService.update(botUser);
     }
 
-    private void whenHlrInfoComplete(Long telegramId, List<Hlr> result, Throwable error) {
+    private void whenHlrInfoCompleteSuccessful(Long telegramId, List<Hlr> result) {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
-        if (result != null) {
-            result.stream()
-                .map(hlrToTelegramResponseConverter::convert)
-                .forEach(response -> sendMessageWithButtons(telegramId, response, replyKeyboardMarkup));
-
-        } else if (error instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
-
-        } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
-
-        } else {
-            log.error("Unexpected error:", error);
-        }
+        result.stream()
+            .map(hlrToTelegramResponseConverter::convert)
+            .forEach(response -> sendMessageWithButtons(telegramId, response, replyKeyboardMarkup));
     }
 
-    private void whenHlrInfoCompleteSendAnswerAsFile(Long telegramId, FileEntity requestFile, List<Hlr> result, Throwable error) {
+    private void whenHlrInfoCompleteSendAnswerAsFile(Long telegramId, FileEntity requestFile, List<Hlr> result) {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
-        if (result != null) {
-            try {
-                FileEntity responseFile = hlrResultFileWriterFacade.write(requestFile, result);
-                sendFile(String.valueOf(telegramId), responseFile.toPath(), responseFile.getReceivedFileName());
-            } catch (Exception e) {
-                log.error("Failed to write result to the file!", e);
-            }
-        } else if (error instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
+        FileEntity responseFile = null;
+        try {
+            // TODO: 10/10/21 refactor later
+            String responseFileName = requestFile.getReceivedFileName()
+                .replaceAll("\\.xls$", ".xlsx")
+                .replaceAll("\\.txt$", ".csv");
 
-        } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
+            responseFile = hlrResultFileWriterFacade.write(fileStorage.create(responseFileName), result);
+            final String filename = "Result_" + responseFileName;
+            sendFile(String.valueOf(telegramId), responseFile.toPath(), filename);
 
-        } else {
-            log.error("Unexpected error:", error);
+
+        } catch (Exception e) {
+            log.error("Failed to write result to the file!", e);
+            sendMessageWithButtons(telegramId, DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
+        } finally {
+            Optional.ofNullable(responseFile)
+                .map(FileEntity::getId)
+                .ifPresent(fileStorage::delete);
         }
 
         fileStorage.delete(requestFile.getId());

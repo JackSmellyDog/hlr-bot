@@ -80,6 +80,35 @@ public class LocalFileStorage implements FileStorage {
             });
     }
 
+    @Override
+    public FileEntity create(String filename) {
+
+        final String extension = FilenameUtils.getExtension(filename);
+        final String id = UUID.randomUUID().toString();
+        final String realFileName = id + '.' + extension;
+        final String fullPath = createFullPath(realFileName);
+
+        Path tempFile = null;
+        try {
+
+            tempFile = Files.createFile(Path.of(fullPath));
+
+            FileEntity entity = FileEntity.builder()
+                .id(id)
+                .extension(extension)
+                .fullPath(fullPath)
+                .realFileName(realFileName)
+                .receivedFileName(filename)
+                .build();
+
+            return fileRepository.save(entity);
+        } catch (Exception e) {
+            log.error("Failed to create a file to the file storage!", e);
+            delete(tempFile);
+            throw new RuntimeException(e);
+        }
+    }
+
     private void delete(Path path) {
         if (path == null) return;
 

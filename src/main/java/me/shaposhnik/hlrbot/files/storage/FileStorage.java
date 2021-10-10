@@ -11,6 +11,7 @@ public interface FileStorage {
 
     FileEntity save(Document document, InputStream is);
 
-    void delete(String id);
+    FileEntity create(String filename);
 
+    void delete(String id);
 }
