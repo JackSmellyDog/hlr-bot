@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Document;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,20 @@ public class LocalFileStorage implements FileStorage {
 
     @Value("${files.storage-location}")
     private String storageLocation;
+
+    @PostConstruct
+    private void createStorageLocationFolder() {
+        try {
+            Path storageDir = Path.of(storageLocation);
+
+            if (Files.notExists(storageDir)) {
+                Files.createDirectory(storageDir);
+            }
+
+        } catch (IOException e) {
+            log.error("Failed to create a storage directory!", e);
+        }
+    }
 
     @Override
     public FileEntity get(String id) {
