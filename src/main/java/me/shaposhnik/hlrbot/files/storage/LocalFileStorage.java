@@ -130,7 +130,7 @@ public class LocalFileStorage implements FileStorage {
         try {
             Files.deleteIfExists(path);
             log.info("File has been deleted: {}", path.getFileName());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Failed to delete a file!", e);
         }
     }

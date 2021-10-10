@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import javax.transaction.Transactional;
 import java.util.Optional;
 
 public interface FileRepository extends JpaRepository<FileEntity, String> {
@@ -13,5 +14,6 @@ public interface FileRepository extends JpaRepository<FileEntity, String> {
 
     @Modifying
     @Query("update FileEntity f set f.deleted = true where f.id = :id")
+    @Transactional
     void markDeleted(@Param("id") String id);
 }

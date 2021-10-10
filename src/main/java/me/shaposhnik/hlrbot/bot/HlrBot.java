@@ -310,6 +310,8 @@ public class HlrBot extends AbstractTelegramBot {
             hlrResultFileEnricherFacade.enrich(requestFile, result).ifPresent(enrichedFile -> {
                 final String enrichedFilename = "Merged_" + requestFile.getReceivedFileName();
                 sendFile(String.valueOf(telegramId), enrichedFile.toPath(), enrichedFilename);
+
+                fileStorage.delete(enrichedFile.getId());
             });
 
         } catch (Exception e) {
@@ -319,9 +321,9 @@ public class HlrBot extends AbstractTelegramBot {
             Optional.ofNullable(responseFile)
                 .map(FileEntity::getId)
                 .ifPresent(fileStorage::delete);
-        }
 
-        fileStorage.delete(requestFile.getId());
+            fileStorage.delete(requestFile.getId());
+        }
     }
 
     private void handleNewState(Message message, BotUser botUser) {
