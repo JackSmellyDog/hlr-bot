@@ -35,31 +35,7 @@ public abstract class AbstractExcelFileEnricher implements HlrResultFileEnricher
 
             int lastCellColumn = findLastCellColumn(sheet);
 
-            int statusColumn = lastCellColumn + 1;
-            int portedColumn = lastCellColumn + 2;
-            int roamingColumn = lastCellColumn + 3;
-
-            Row header = sheet.getRow(0);
-            int phoneColumn = findIndexOfPhoneColumn(header);
-
-            createCell(header, statusColumn, "Status");
-            createCell(header, portedColumn, "Ported");
-            createCell(header, roamingColumn, "Roaming");
-
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                String rawPhoneNumber = mapCellValueToString(sheet.getRow(i).getCell(phoneColumn));
-
-                Hlr hlr = rawNumberToHlrMap.get(rawPhoneNumber);
-
-                final String status = Optional.ofNullable(hlr).map(Hlr::getStatus).map(StringUtils::capitalize).orElse(DASH);
-                createCell(sheet.getRow(i), statusColumn, status);
-
-                final String ported = Optional.ofNullable(hlr).map(Hlr::getPorted).map(Ported::toString).orElse(DASH);
-                createCell(sheet.getRow(i), portedColumn, ported);
-
-                final String roaming = Optional.ofNullable(hlr).map(Hlr::getRoaming).map(Roaming::toString).orElse(DASH);
-                createCell(sheet.getRow(i), roamingColumn, roaming);
-            }
+            addData(sheet, rawNumberToHlrMap, lastCellColumn);
 
             workbook.write(new FileOutputStream(fileEntity.toFile()));
 
@@ -68,6 +44,39 @@ public abstract class AbstractExcelFileEnricher implements HlrResultFileEnricher
         }
 
         return fileEntity;
+    }
+
+    private void addData(Sheet sheet, Map<String, Hlr> rawNumberToHlrMap, int lastCellColumn) {
+        int statusColumn = lastCellColumn + 1;
+        int portedColumn = lastCellColumn + 2;
+        int roamingColumn = lastCellColumn + 3;
+
+        Row header = sheet.getRow(0);
+        int phoneColumn = findIndexOfPhoneColumn(header);
+
+        createCell(header, statusColumn, "Status");
+        createCell(header, portedColumn, "Ported");
+        createCell(header, roamingColumn, "Roaming");
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+
+            if (row == null)
+                return;
+
+            String rawPhoneNumber = mapCellValueToString(row.getCell(phoneColumn));
+
+            Hlr hlr = rawNumberToHlrMap.get(rawPhoneNumber);
+
+            final String status = Optional.ofNullable(hlr).map(Hlr::getStatus).map(StringUtils::capitalize).orElse(DASH);
+            createCell(row, statusColumn, status);
+
+            final String ported = Optional.ofNullable(hlr).map(Hlr::getPorted).map(Ported::toString).orElse(DASH);
+            createCell(row, portedColumn, ported);
+
+            final String roaming = Optional.ofNullable(hlr).map(Hlr::getRoaming).map(Roaming::toString).orElse(DASH);
+            createCell(row, roamingColumn, roaming);
+        }
     }
 
     private void createCell(Row row, int index, String value) {
