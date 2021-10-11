@@ -193,6 +193,9 @@ public class HlrBot extends AbstractTelegramBot {
         } catch (BaseException e) {
             log.error("!", e);
             sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
+        } catch (Exception e) {
+            log.error("Unexpected error:", e);
+            sendMessageWithButtons(botUser.getId(), DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
         }
 
         botUser.setState(ACTIVE);
