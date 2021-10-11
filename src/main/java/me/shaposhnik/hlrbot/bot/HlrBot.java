@@ -19,10 +19,12 @@ import me.shaposhnik.hlrbot.service.BotUserService;
 import me.shaposhnik.hlrbot.service.HlrAsyncService;
 import me.shaposhnik.hlrbot.service.PhoneService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.*;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.*;
 
@@ -39,24 +41,6 @@ public class HlrBot extends AbstractTelegramBot {
         List.of(DISCARD_STATE)
     );
 
-    // TODO: 9/19/21 messages to a separate file
-    private static final String TOKEN_REQUIRED_MESSAGE = "Give me your token!";
-    private static final String TOKEN_INVALID_MESSAGE = "It's an invalid token. Please send again!";
-    private static final String TOKEN_ACCEPTED_MESSAGE = "Api Key has been accepted!";
-    private static final String NUMBER_FOR_HLR_REQUIRED_TEMPLATE = "Send me up to %s numbers you want to hlr!";
-    private static final String ID_FOR_HLR_REQUIRED = "Send me the ID of previous HLR request!";
-
-    private static final String TOO_MANY_PHONES_MESSAGE_TEMPLATE =
-        "Phone(s): %s was/were ignored. Please, send them in the next request.";
-
-    private static final String FILE_MESSAGE = "Send me a file with phone numbers!";
-    private static final String NO_FILES_IN_MESSAGE = "Your message has no files attached!";
-    private static final String TOO_LARGE_FILE_TEMPLATE = "The file is too large! Files which weight more than %s MB are not allowed!";
-    private static final String TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE =
-        "Too many numbers in the file! There were %d numbers which is greater than %d allowed";
-    private static final String PROCESSING_OF_FILE_TEMPLATE = "Processing of the file will take about %s minutes.";
-    public static final String DEFAULT_ERROR_MESSAGE = "Ooops! Something went wrong.";
-
     private final BotUserService botUserService;
     private final HlrAsyncService hlrService;
     private final BsgAccountService accountService;
@@ -66,6 +50,7 @@ public class HlrBot extends AbstractTelegramBot {
     private final PhoneFileReaderFacade phoneFileReaderFacade;
     private final HlrResultFileWriterFacade hlrResultFileWriterFacade;
     private final HlrResultFileEnricherFacade hlrResultFileEnricherFacade;
+    private final MessageSource messageSource;
 
     @Value("${bot.name}")
     private String botUsername;
@@ -90,6 +75,7 @@ public class HlrBot extends AbstractTelegramBot {
 
     @Value("${bot.long-execution-message-value-in-minutes}")
     private int longExecutionMessageValue;
+
 
     @Override
     public String getBotUsername() {
@@ -152,14 +138,15 @@ public class HlrBot extends AbstractTelegramBot {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
         if (!message.hasDocument()) {
-            sendMessageWithButtons(botUser.getId(), NO_FILES_IN_MESSAGE, replyKeyboardMarkup);
+            final String noFileMessage = getMessage("file.not-attached", botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), noFileMessage, replyKeyboardMarkup);
             return;
         }
 
         final var document = message.getDocument();
 
         if (document.getFileSize() > maxFileSizeInBytes) {
-            final String errorMessage = String.format(TOO_LARGE_FILE_TEMPLATE, maxFileSizeInMegabytes);
+            final String errorMessage = getMessage("file.templates.too-large", botUser.getLocale(), maxFileSizeInMegabytes);
             sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
             return;
         }
@@ -169,24 +156,24 @@ public class HlrBot extends AbstractTelegramBot {
             final List<Phone> phones = phoneFileReaderFacade.readPhones(downloadedFile);
 
             if (phones.size() > limitOfNumbersInFile) {
-                final String tooManyNumbersMessage =
-                    String.format(TOO_MANY_NUMBERS_IN_THE_FILE_TEMPLATE, phones.size(), limitOfNumbersInFile);
+                final String tooManyNumbersMessage = getMessage("file.templates.too-many-numbers", botUser.getLocale(), phones.size(), limitOfNumbersInFile);
                 sendMessageWithButtons(botUser.getId(), tooManyNumbersMessage, replyKeyboardMarkup);
                 return;
             }
 
             long toMinutes = TimeUnit.MILLISECONDS.toMinutes(expectedExecutionTimePerRequest);
             if (toMinutes >= longExecutionMessageValue) {
-                sendMessageWithButtons(botUser.getId(), String.format(PROCESSING_OF_FILE_TEMPLATE, toMinutes), replyKeyboardMarkup);
+                final String tooManyNumbersMessage = getMessage("file.templates.processing-time", botUser.getLocale(), toMinutes);
+                sendMessageWithButtons(botUser.getId(), tooManyNumbersMessage, replyKeyboardMarkup);
             }
 
             List<SentHlr> sentHlrList = hlrService.sendHlrs(phones, botUser.getApiKey());
 
             hlrService.getHlrInfoListAsync(sentHlrList, botUser.getApiKey()).whenComplete((result, error) -> {
                 if (result != null) {
-                    whenHlrInfoCompleteSendAnswerAsFile(botUser.getId(), downloadedFile, result);
+                    whenHlrInfoCompleteSendAnswerAsFile(botUser, downloadedFile, result);
                 } else {
-                    handleError(botUser.getId(), error);
+                    handleError(error, botUser);
                 }
             });
 
@@ -195,30 +182,30 @@ public class HlrBot extends AbstractTelegramBot {
             sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
         } catch (Exception e) {
             log.error("Unexpected error:", e);
-            sendMessageWithButtons(botUser.getId(), DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), getMessage("error.default", botUser.getLocale()), replyKeyboardMarkup);
         }
 
         botUser.setState(ACTIVE);
         botUserService.update(botUser);
     }
 
-    private void handleError(Long telegramId, Throwable error) {
+    private void handleError(Throwable error, BotUser botUser) {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
         if (error instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getMessage(), replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), error.getMessage(), replyKeyboardMarkup);
 
         } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
-            sendMessageWithButtons(telegramId, error.getCause().getMessage(), replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), error.getCause().getMessage(), replyKeyboardMarkup);
 
         } else {
             log.error("Unexpected error:", error);
-            sendMessageWithButtons(telegramId, DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), getMessage("error.default", botUser.getLocale()), replyKeyboardMarkup);
         }
     }
 
     private void handleSendingApiKeyState(Message message, BotUser botUser) {
-        acceptNewToken(message, botUser, TOKEN_INVALID_MESSAGE);
+        acceptNewToken(message, botUser, getMessage("token.invalid", botUser.getLocale()));
     }
 
     private boolean isDiscardStateCommand(Message message) {
@@ -234,7 +221,7 @@ public class HlrBot extends AbstractTelegramBot {
             botUser.setApiKey(message.getText());
             botUserService.update(botUser);
 
-            sendMessageWithButtons(botUser.getId(), TOKEN_ACCEPTED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getId(), getMessage("token.accepted", botUser.getLocale()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
         } else {
             sendSimpleMessage(botUser.getId(), warningMessageText);
@@ -266,7 +253,7 @@ public class HlrBot extends AbstractTelegramBot {
             List<Phone> ignoredPhones = phoneService.getIgnoredPhones(receivedPhones);
 
             if (!ignoredPhones.isEmpty()) {
-                final String tooManyPhonesMessage = String.format(TOO_MANY_PHONES_MESSAGE_TEMPLATE, ignoredPhones);
+                final String tooManyPhonesMessage = getMessage("numbers.templates.ignored", botUser.getLocale());
                 sendMessageWithButtons(botUser.getId(), tooManyPhonesMessage, replyKeyboardMarkup);
             }
 
@@ -276,7 +263,7 @@ public class HlrBot extends AbstractTelegramBot {
                 if (result != null) {
                     whenHlrInfoCompleteSuccessful(botUser.getId(), result);
                 } else {
-                    handleError(botUser.getId(), error);
+                    handleError(error, botUser);
                 }
             });
 
@@ -296,7 +283,7 @@ public class HlrBot extends AbstractTelegramBot {
             .forEach(response -> sendMessageWithButtons(telegramId, response, replyKeyboardMarkup));
     }
 
-    private void whenHlrInfoCompleteSendAnswerAsFile(Long telegramId, FileEntity requestFile, List<Hlr> result) {
+    private void whenHlrInfoCompleteSendAnswerAsFile(BotUser botUser, FileEntity requestFile, List<Hlr> result) {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD);
 
         FileEntity responseFile = null;
@@ -308,18 +295,18 @@ public class HlrBot extends AbstractTelegramBot {
 
             responseFile = hlrResultFileWriterFacade.write(fileStorage.create(responseFileName), result);
             final String filename = "Result_" + responseFileName;
-            sendFile(String.valueOf(telegramId), responseFile.toPath(), filename);
+            sendFile(String.valueOf(botUser.getId()), responseFile.toPath(), filename);
 
             hlrResultFileEnricherFacade.enrich(requestFile, result).ifPresent(enrichedFile -> {
                 final String enrichedFilename = "Merged_" + requestFile.getReceivedFileName();
-                sendFile(String.valueOf(telegramId), enrichedFile.toPath(), enrichedFilename);
+                sendFile(String.valueOf(botUser.getId()), enrichedFile.toPath(), enrichedFilename);
 
                 fileStorage.delete(enrichedFile.getId());
             });
 
         } catch (Exception e) {
             log.error("Failed to write result to the file!", e);
-            sendMessageWithButtons(telegramId, DEFAULT_ERROR_MESSAGE, replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), getMessage("error.default", botUser.getLocale()), replyKeyboardMarkup);
         } finally {
             Optional.ofNullable(responseFile)
                 .map(FileEntity::getId)
@@ -330,19 +317,20 @@ public class HlrBot extends AbstractTelegramBot {
     }
 
     private void handleNewState(Message message, BotUser botUser) {
-        acceptNewToken(message, botUser, TOKEN_REQUIRED_MESSAGE);
+        acceptNewToken(message, botUser, getMessage("token.required", botUser.getLocale()));
     }
 
     private void handleActiveState(Message message, BotUser botUser) {
-        Command.fromString(message.getText()).ifPresentOrElse(
-            command -> handleIncomeCommand(command, botUser),
-            () -> log.info("Message ({}) ignored", message.getText())
-        );
+        Command.fromString(message.getText()).ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
+            log.info("Message ({}) is not a command.", message.getText());
+            String text = getMessage("warning.not-a-command", botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), text, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+        });
     }
 
     private void handleIncomeCommand(Command command, BotUser botUser) {
         if (command == HLR) {
-            final String numberForHlrMessage = String.format(NUMBER_FOR_HLR_REQUIRED_TEMPLATE, limitOfNumbers);
+            final String numberForHlrMessage = getMessage("numbers.templates.required", botUser.getLocale(), limitOfNumbers);
             sendMessageWithButtons(botUser.getId(), numberForHlrMessage, createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_NUMBERS);
@@ -350,7 +338,7 @@ public class HlrBot extends AbstractTelegramBot {
 
         } else if (command == ID) {
 
-            sendMessageWithButtons(botUser.getId(), ID_FOR_HLR_REQUIRED, createReplyKeyboardMarkup(List.of()));
+            sendMessageWithButtons(botUser.getId(), getMessage("id.required", botUser.getLocale()), createReplyKeyboardMarkup(List.of()));
 
             botUser.setState(SENDING_ID);
             botUserService.update(botUser);
@@ -361,13 +349,13 @@ public class HlrBot extends AbstractTelegramBot {
             botUserService.update(botUser);
 
         } else if (command == CHANGE_API_KEY) {
-            sendMessageWithButtons(botUser.getId(), TOKEN_REQUIRED_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getId(), getMessage("token.required", botUser.getLocale()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
             botUser.setState(SENDING_API_KEY);
             botUserService.update(botUser);
 
         } else if (command == FILE) {
-            sendMessageWithButtons(botUser.getId(), FILE_MESSAGE, createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
+            sendMessageWithButtons(botUser.getId(), getMessage("file.required", botUser.getLocale()), createReplyKeyboardMarkup(DEFAULT_KEYBOARD));
 
             botUser.setState(SENDING_FILE);
             botUserService.update(botUser);
@@ -380,6 +368,10 @@ public class HlrBot extends AbstractTelegramBot {
             throw new IllegalStateException("Unhandled command is present");
         }
 
+    }
+
+    private String getMessage(String key, Locale locale, Object... args) {
+        return messageSource.getMessage(key, args, locale);
     }
 
 }

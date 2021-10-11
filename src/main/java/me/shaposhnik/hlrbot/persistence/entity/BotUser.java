@@ -5,6 +5,7 @@ import me.shaposhnik.hlrbot.model.enums.UserState;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.util.Locale;
 
 @Entity
 @Table(name = "bot_user")
@@ -36,7 +37,8 @@ public class BotUser {
     @Column
     private String lastName;
 
-    @Column
-    private String languageCode;
+    @Column(name = "language_code")
+    @Convert(converter = LocaleAttributeConverter.class)
+    private Locale locale;
 
 }

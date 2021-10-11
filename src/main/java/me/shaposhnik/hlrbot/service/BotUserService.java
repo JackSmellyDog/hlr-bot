@@ -8,12 +8,15 @@ import me.shaposhnik.hlrbot.persistence.repository.BotUserRepository;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BotUserService {
+
+    private static final Locale DEFAULT_LOCALE = Locale.US;
     private final BotUserRepository repository;
 
     public Optional<BotUser> findBotUser(User user) {
@@ -27,12 +30,16 @@ public class BotUserService {
     }
 
     private BotUser mapTelegramUserToBotUser(User user) {
+        final Locale locale = Optional.ofNullable(user.getLanguageCode())
+            .map(Locale::forLanguageTag)
+            .orElse(DEFAULT_LOCALE);
+
         return BotUser.builder()
             .id(user.getId())
             .userName(user.getUserName())
             .firstName(user.getFirstName())
             .lastName(user.getLastName())
-            .languageCode(user.getLanguageCode())
+            .locale(locale)
             .state(UserState.NEW)
             .build();
     }
