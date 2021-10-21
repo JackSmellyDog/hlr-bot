@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -15,7 +15,7 @@ public class HlrBotProperties {
     private String name;
     private String token;
 
-    private List<String> languages;
+    private Set<String> languages;
     private int limitOfNumbers;
     private int expectedExecutionTimePerRequestInMilliseconds;
     private int longExecutionMessageValueInMinutes;

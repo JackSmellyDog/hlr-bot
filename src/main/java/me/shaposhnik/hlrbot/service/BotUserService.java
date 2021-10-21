@@ -2,6 +2,7 @@ package me.shaposhnik.hlrbot.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.bot.HlrBotProperties;
 import me.shaposhnik.hlrbot.model.enums.UserState;
 import me.shaposhnik.hlrbot.persistence.entity.BotUser;
 import me.shaposhnik.hlrbot.persistence.repository.BotUserRepository;
@@ -18,6 +19,7 @@ public class BotUserService {
 
     private static final Locale DEFAULT_LOCALE = Locale.US;
     private final BotUserRepository repository;
+    private final HlrBotProperties hlrBotProperties;
 
     public Optional<BotUser> findBotUser(User user) {
         return repository.findById(user.getId());
@@ -31,6 +33,7 @@ public class BotUserService {
 
     private BotUser mapTelegramUserToBotUser(User user) {
         final Locale locale = Optional.ofNullable(user.getLanguageCode())
+            .filter(languageCode -> hlrBotProperties.getLanguages().contains(languageCode))
             .map(Locale::forLanguageTag)
             .orElse(DEFAULT_LOCALE);
 
@@ -46,5 +49,18 @@ public class BotUserService {
 
     public void update(BotUser botUser) {
         repository.save(botUser);
+    }
+
+    public void updateLanguageIfChanged(BotUser botUser, String newLanguageCode) {
+        final String currentLanguageCode = botUser.getLocale().getLanguage();
+        if (hlrBotProperties.getLanguages().contains(newLanguageCode)
+            && !currentLanguageCode.equalsIgnoreCase(newLanguageCode)) {
+
+            botUser.setLocale(Locale.forLanguageTag(newLanguageCode));
+            repository.save(botUser);
+
+            log.info("Locale has been changed for user {}, from {} to {}",
+                botUser.getUserName(), currentLanguageCode, newLanguageCode);
+        }
     }
 }
