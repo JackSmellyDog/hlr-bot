@@ -13,6 +13,8 @@ import java.util.Map;
 @Builder
 public class Hlr {
     private Phone phone;
+    private String reference;
+    private String errorDescription;
 
     private String providerId;
     private String msisdn;

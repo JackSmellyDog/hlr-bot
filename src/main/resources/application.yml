@@ -14,6 +14,11 @@ bot:
   name:
   token:
   limit-of-numbers: 3
+  limit-of-numbers-in-file: 3000
+  expected-execution-time-per-request-in-milliseconds: 500
+  long-execution-message-value-in-minutes: 1
+  files:
+    max-size: 5
 
 integration:
   urls:
@@ -22,6 +27,7 @@ integration:
     create-hlr-url: ${integration.urls.base-url}/hlr/create
     balance-url: ${integration.urls.base-url}/common/balance
   bsg:
+    max-hlrs-per-request: 1000
     hlr-statuses:
       finalized:
         - absent
@@ -34,3 +40,7 @@ integration:
     async-hlr-info:
       limit: 10
       pause: 1000
+
+files:
+  csv-file-writer-separator: ;
+  storage-location: ./temp
