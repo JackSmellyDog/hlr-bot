@@ -19,7 +19,7 @@ bot:
   limit-of-numbers: 3
   file:
     max-size: 5
-    limit-of-numbers-in-file: 3000
+    limit-of-numbers: 3000
   expected-execution-time-per-request-in-milliseconds: 500
   long-execution-message-value-in-minutes: 1
 
