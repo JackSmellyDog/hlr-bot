@@ -7,21 +7,17 @@ import java.util.stream.Stream;
 
 @Getter
 public enum Command {
-    HLR("/hlr", "\uD83E\uDD84", "HLR"),
-    ID("/id", "\uD83D\uDD0D", "ID"),
-    FILE("/file", "\uD83D\uDCC4", "FILE"),
-    BALANCE("/balance", "\uD83D\uDCB5", "Balance"),
-    CHANGE_API_KEY("/change_api_key", "\uD83D\uDDDD", "Change Api Key"),
-    DISCARD_STATE("/discard_state", "\uD83E\uDDF9", "Discard State");
+    HLR("/hlr", "buttons.hlr.emoji", "buttons.hlr.name"),
+    ID("/id", "buttons.id.emoji", "buttons.id.name"),
+    FILE("/file", "buttons.file.emoji", "buttons.file.name"),
+    BALANCE("/balance", "buttons.balance.emoji", "buttons.balance.name"),
+    CHANGE_API_KEY("/change_api_key", "buttons.change-api-key.emoji", "buttons.change-api-key.name"),
+    DISCARD_STATE("/discard_state", "buttons.discard-state.emoji", "buttons.discard-state.name");
 
     Command(String asCommand, String emoji, String buttonAlias) {
         this.emoji = emoji;
         this.asCommand = asCommand;
         this.buttonAlias = buttonAlias;
-    }
-
-    public String asButton() {
-        return String.format("%s %s", emoji, buttonAlias);
     }
 
     private final String emoji;
@@ -30,7 +26,7 @@ public enum Command {
 
     public static Optional<Command> fromString(String text) {
         return Stream.of(values())
-            .filter(value -> value.asCommand.equalsIgnoreCase(text) || value.asButton().equalsIgnoreCase(text))
+            .filter(value -> value.asCommand.equalsIgnoreCase(text))
             .findFirst();
     }
 

@@ -117,7 +117,7 @@ public class BsgApiClient {
                 .build();
 
         } catch (Exception e) {
-            log.error("Failed to create request for HLR!");
+            log.error("Failed to create request for HLR!", e);
             throw new BsgException(e);
         }
     }

@@ -13,12 +13,15 @@ spring:
 bot:
   name:
   token:
+  languages:
+    - en
+    - uk
   limit-of-numbers: 3
-  limit-of-numbers-in-file: 3000
+  file:
+    max-size: 5
+    limit-of-numbers-in-file: 3000
   expected-execution-time-per-request-in-milliseconds: 500
   long-execution-message-value-in-minutes: 1
-  files:
-    max-size: 5
 
 integration:
   urls:

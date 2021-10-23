@@ -1,7 +1,6 @@
 package me.shaposhnik.hlrbot.bot;
 
 import lombok.extern.slf4j.Slf4j;
-import me.shaposhnik.hlrbot.bot.enums.Command;
 import me.shaposhnik.hlrbot.files.exception.DownloadFileException;
 import me.shaposhnik.hlrbot.files.exception.UploadFileException;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -11,15 +10,10 @@ import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.function.Predicate.not;
 
 @Slf4j
 public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
@@ -122,27 +116,5 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
             log.error("Something went wrong while uploading a file to Telegram", e);
             throw new UploadFileException(e);
         }
-    }
-
-    // TODO: 9/27/21 should not be into this class
-    protected ReplyKeyboardMarkup createReplyKeyboardMarkup(List<List<Command>> keyboard) {
-        var keyboardRows = keyboard.stream()
-            .filter(not(List::isEmpty))
-            .map(this::mapCommandsListToKeyboardRow)
-            .collect(Collectors.toList());
-
-        return ReplyKeyboardMarkup.builder()
-            .clearKeyboard()
-            .keyboard(keyboardRows)
-            .resizeKeyboard(true)
-            .build();
-    }
-
-    // TODO: 9/27/21 should not be into this class
-    private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList) {
-        var row = new KeyboardRow();
-        commandList.stream().map(Command::asButton).forEach(row::add);
-
-        return row;
     }
 }

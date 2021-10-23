@@ -10,9 +10,9 @@
     </parent>
     <groupId>me.shaposhnik</groupId>
     <artifactId>hlr-bot</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>3.0.0</version>
     <name>hlr-bot</name>
-    <description>Demo project for Spring Boot</description>
+    <description>HLR bot</description>
 
     <properties>
         <java.version>11</java.version>

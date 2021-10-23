@@ -15,19 +15,4 @@ public class Balance {
     private int limit;
 
     private String errorDescription;
-
-    @Override
-    public String toString() {
-        return amount != null ? successfulToString() : failedToString();
-    }
-
-    private String failedToString() {
-        return "***Error: ***" + errorDescription;
-    }
-
-    private String successfulToString() {
-        return "***Amount:*** " + ' ' + amount + '\n' +
-            "***Currency:*** " + ' ' + currency + '\n' +
-            "***Limit:*** " + ' ' + limit;
-    }
 }

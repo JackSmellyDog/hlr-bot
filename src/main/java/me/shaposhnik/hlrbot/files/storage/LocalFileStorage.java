@@ -2,6 +2,7 @@ package me.shaposhnik.hlrbot.files.storage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.shaposhnik.hlrbot.files.exception.FileStorageException;
 import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import me.shaposhnik.hlrbot.files.persistence.FileRepository;
 import org.apache.commons.io.FileUtils;
@@ -59,7 +60,7 @@ public class LocalFileStorage implements FileStorage {
             tempFile = Files.createFile(Path.of(fullPath));
             FileUtils.copyInputStreamToFile(is, tempFile.toFile());
 
-            FileEntity entity = FileEntity.builder()
+            var entity = FileEntity.builder()
                 .id(document.getFileUniqueId())
                 .mimeType(document.getMimeType())
                 .extension(extension)
@@ -73,7 +74,7 @@ public class LocalFileStorage implements FileStorage {
         } catch (Exception e) {
             log.error("Failed to save a file to the file storage!", e);
             delete(tempFile);
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
@@ -108,7 +109,7 @@ public class LocalFileStorage implements FileStorage {
 
             tempFile = Files.createFile(Path.of(fullPath));
 
-            FileEntity entity = FileEntity.builder()
+            var entity = FileEntity.builder()
                 .id(id)
                 .extension(extension)
                 .fullPath(fullPath)
@@ -120,7 +121,7 @@ public class LocalFileStorage implements FileStorage {
         } catch (Exception e) {
             log.error("Failed to create a file to the file storage!", e);
             delete(tempFile);
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
