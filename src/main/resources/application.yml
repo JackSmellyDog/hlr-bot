@@ -7,8 +7,10 @@ spring:
     driverClassName: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties.hibernate.jdbc.lob.non_contextual_creation: true
+  flyway:
+    locations: db/migration/h2
 
 bot:
   name:
@@ -19,7 +21,7 @@ bot:
   limit-of-numbers: 3
   file:
     max-size: 5
-    limit-of-numbers-in-file: 3000
+    limit-of-numbers: 3000
   expected-execution-time-per-request-in-milliseconds: 500
   long-execution-message-value-in-minutes: 1
 
