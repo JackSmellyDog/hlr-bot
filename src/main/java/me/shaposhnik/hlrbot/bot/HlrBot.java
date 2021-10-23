@@ -171,7 +171,8 @@ public class HlrBot extends AbstractTelegramBot {
 
         } catch (BaseException e) {
             log.error("App exception:", e);
-            sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
+            final String errorMessage = messageSource.getMessage(e.getMessageKey(), botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
         } catch (Exception e) {
             log.error(UNEXPECTED_ERROR, e);
             sendMessageWithButtons(botUser.getId(), messageSource.getDefaultErrorMessage(botUser.getLocale()), replyKeyboardMarkup);
@@ -185,10 +186,12 @@ public class HlrBot extends AbstractTelegramBot {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD, botUser.getLocale());
 
         if (error instanceof BaseException) {
-            sendMessageWithButtons(botUser.getId(), error.getMessage(), replyKeyboardMarkup);
+            final String errorMessage = messageSource.getMessage(((BaseException) error).getMessageKey(), botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(),errorMessage, replyKeyboardMarkup);
 
         } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
-            sendMessageWithButtons(botUser.getId(), error.getCause().getMessage(), replyKeyboardMarkup);
+            final String errorMessage = messageSource.getMessage(((BaseException) error.getCause()).getMessageKey(), botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
 
         } else {
             log.error(UNEXPECTED_ERROR, error);
@@ -229,7 +232,8 @@ public class HlrBot extends AbstractTelegramBot {
             sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup);
 
         } catch (BaseException e) {
-            sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
+            final String errorMessage = messageSource.getMessage(e.getMessageKey(), botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
         } catch (Exception e) {
             log.error(UNEXPECTED_ERROR, e);
             sendMessageWithButtons(botUser.getId(), messageSource.getDefaultErrorMessage(botUser.getLocale()), replyKeyboardMarkup);
@@ -264,7 +268,8 @@ public class HlrBot extends AbstractTelegramBot {
             });
 
         } catch (BaseException e) {
-            sendMessageWithButtons(botUser.getId(), e.getMessage(), replyKeyboardMarkup);
+            final String errorMessage = messageSource.getMessage(e.getMessageKey(), botUser.getLocale());
+            sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
         } catch (Exception e) {
             log.error(UNEXPECTED_ERROR, e);
             sendMessageWithButtons(botUser.getId(), messageSource.getDefaultErrorMessage(botUser.getLocale()), replyKeyboardMarkup);

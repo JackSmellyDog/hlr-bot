@@ -4,15 +4,16 @@ import me.shaposhnik.hlrbot.exception.BaseException;
 
 public class BsgException extends BaseException {
 
+    @Override
+    public String getMessageKey() {
+        return "exception.bsg";
+    }
+
     public BsgException() {
     }
 
     public BsgException(String message) {
         super(message);
-    }
-
-    public BsgException(String message, Throwable cause) {
-        super(message, cause);
     }
 
     public BsgException(Throwable cause) {
