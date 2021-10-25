@@ -50,3 +50,9 @@ integration:
 files:
   csv-file-writer-separator: ;
   storage-location: ./temp
+  headers:
+    regex-list:
+      - .*phone.*
+      - .*number.*
+      - .*телефон.*
+      - .*номер.*
