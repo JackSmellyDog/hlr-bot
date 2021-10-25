@@ -18,6 +18,7 @@ bot:
   languages:
     - en
     - uk
+    - ru
   limit-of-numbers: 3
   file:
     max-size: 5
