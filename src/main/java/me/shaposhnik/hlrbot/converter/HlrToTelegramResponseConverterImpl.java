@@ -63,10 +63,10 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
         }
 
         var mainBuilder = new StringBuilder()
-            .append(requestedPhoneNumberKey).append(COLON_SPACE).append(requestedPhoneNumber).append(EOL)
+            .append(requestedPhoneNumberKey).append(COLON_SPACE).append(escapeSpecialSymbols(requestedPhoneNumber)).append(EOL)
             .append(providerIdKey).append(COLON_SPACE).append(hlr.getProviderId()).append(EOL)
-            .append(msisdnKey).append(COLON_SPACE).append(hlr.getMsisdn()).append(EOL)
-            .append(networkKey).append(COLON_SPACE).append(hlr.getNetwork()).append(EOL)
+            .append(msisdnKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getMsisdn())).append(EOL)
+            .append(networkKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getNetwork())).append(EOL)
             .append(statusKey).append(COLON_SPACE).append(capitalize(hlr.getStatus())).append(EOL)
             .append(portedKey).append(COLON_SPACE).append(hlr.getPorted()).append(EOL)
             .append(roamingKey).append(COLON_SPACE).append(hlr.getRoaming()).append(EOL)
@@ -78,7 +78,7 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
             StringBuilder detailsBuilder = new StringBuilder();
 
             details.forEach((k, v) -> 
-                detailsBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(v).append(EOL));
+                detailsBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
 
             mainBuilder.append(detailsKey).append(COLON_SPACE).append(EOL).append(detailsBuilder);
         }
@@ -89,7 +89,7 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
             var otherPropertiesBuilder = new StringBuilder();
 
             otherProperties.forEach((k, v) ->
-                otherPropertiesBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(v).append(EOL));
+                otherPropertiesBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
 
             mainBuilder.append(otherPropertiesKey).append(COLON_SPACE).append(EOL).append(otherPropertiesBuilder);
         }
@@ -103,5 +103,13 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
     
     private String bold(String text) {
         return String.format("***%s***", text);
+    }
+
+    private String escapeSpecialSymbols(String text) {
+        if (text == null) {
+            return null;
+        }
+
+        return text.replace("*", "\\*");
     }
 }
