@@ -10,7 +10,7 @@
     </parent>
     <groupId>me.shaposhnik</groupId>
     <artifactId>hlr-bot</artifactId>
-    <version>3.0.0</version>
+    <version>2.0.1</version>
     <name>hlr-bot</name>
     <description>HLR bot</description>
 
