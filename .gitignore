@@ -29,5 +29,6 @@ build/
 
 ### VS Code ###
 .vscode/
-/data/hlr-bot.mv.db
+/data/
 /logs/
+/temp/
