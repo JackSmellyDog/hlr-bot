@@ -1,10 +1,12 @@
 package me.shaposhnik.hlrbot.model;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.Objects;
 
 @Getter
+@EqualsAndHashCode(of = "filteredNumber")
 public class Phone {
 
     private final String rawNumberValue;
@@ -24,16 +26,4 @@ public class Phone {
         return rawNumberValue;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Phone phone = (Phone) o;
-        return Objects.equals(filteredNumber, phone.getFilteredNumber());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(filteredNumber);
-    }
 }
