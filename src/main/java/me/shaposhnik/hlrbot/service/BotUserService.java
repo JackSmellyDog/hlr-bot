@@ -33,18 +33,18 @@ public class BotUserService {
 
     private BotUser mapTelegramUserToBotUser(User user) {
         final Locale locale = Optional.ofNullable(user.getLanguageCode())
-            .filter(languageCode -> hlrBotProperties.getLanguages().contains(languageCode))
-            .map(Locale::forLanguageTag)
-            .orElse(DEFAULT_LOCALE);
+                .filter(languageCode -> hlrBotProperties.getLanguages().contains(languageCode))
+                .map(Locale::forLanguageTag)
+                .orElse(DEFAULT_LOCALE);
 
         return BotUser.builder()
-            .id(user.getId())
-            .userName(user.getUserName())
-            .firstName(user.getFirstName())
-            .lastName(user.getLastName())
-            .locale(locale)
-            .state(UserState.NEW)
-            .build();
+                .id(user.getId())
+                .userName(user.getUserName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .locale(locale)
+                .state(UserState.NEW)
+                .build();
     }
 
     public void update(BotUser botUser) {
@@ -54,13 +54,13 @@ public class BotUserService {
     public void updateLanguageIfChanged(BotUser botUser, String newLanguageCode) {
         final String currentLanguageCode = botUser.getLocale().getLanguage();
         if (hlrBotProperties.getLanguages().contains(newLanguageCode)
-            && !currentLanguageCode.equalsIgnoreCase(newLanguageCode)) {
+                && !currentLanguageCode.equalsIgnoreCase(newLanguageCode)) {
 
             botUser.setLocale(Locale.forLanguageTag(newLanguageCode));
             repository.save(botUser);
 
             log.info("Locale has been changed for user {}, from {} to {}",
-                botUser.getUserName(), currentLanguageCode, newLanguageCode);
+                    botUser.getUserName(), currentLanguageCode, newLanguageCode);
         }
     }
 }

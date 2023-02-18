@@ -40,9 +40,9 @@ import static me.shaposhnik.hlrbot.model.enums.UserState.*;
 public class HlrBot extends AbstractTelegramBot {
     // TODO: 10/20/21 keyboard service
     private static final List<List<Command>> DEFAULT_KEYBOARD = List.of(
-        List.of(HLR, ID, FILE),
-        List.of(BALANCE, CHANGE_API_KEY),
-        List.of(DISCARD_STATE)
+            List.of(HLR, ID, FILE),
+            List.of(BALANCE, CHANGE_API_KEY),
+            List.of(DISCARD_STATE)
     );
     private static final String UNEXPECTED_ERROR = "Unexpected error:";
 
@@ -148,7 +148,7 @@ public class HlrBot extends AbstractTelegramBot {
 
             if (phones.size() > limitOfNumbersInFile) {
                 final String tooManyNumbersMessage =
-                    messageSource.getMessage("file.templates.too-many-numbers", botUser.getLocale(), phones.size(), limitOfNumbersInFile);
+                        messageSource.getMessage("file.templates.too-many-numbers", botUser.getLocale(), phones.size(), limitOfNumbersInFile);
                 sendMessageWithButtons(botUser.getId(), tooManyNumbersMessage, replyKeyboardMarkup);
                 return;
             }
@@ -187,7 +187,7 @@ public class HlrBot extends AbstractTelegramBot {
 
         if (error instanceof BaseException) {
             final String errorMessage = messageSource.getMessage(((BaseException) error).getMessageKey(), botUser.getLocale());
-            sendMessageWithButtons(botUser.getId(),errorMessage, replyKeyboardMarkup);
+            sendMessageWithButtons(botUser.getId(), errorMessage, replyKeyboardMarkup);
 
         } else if (error instanceof CompletionException && error.getCause() instanceof BaseException) {
             final String errorMessage = messageSource.getMessage(((BaseException) error.getCause()).getMessageKey(), botUser.getLocale());
@@ -205,8 +205,8 @@ public class HlrBot extends AbstractTelegramBot {
 
     private boolean isDiscardStateCommand(Message message) {
         return textInputCommandConverter.convertTextToCommand(message.getText())
-            .filter(command -> command == DISCARD_STATE)
-            .isPresent();
+                .filter(command -> command == DISCARD_STATE)
+                .isPresent();
     }
 
     private void acceptNewToken(Message message, BotUser botUser, String warningMessageText) {
@@ -283,8 +283,8 @@ public class HlrBot extends AbstractTelegramBot {
         final var replyKeyboardMarkup = createReplyKeyboardMarkup(DEFAULT_KEYBOARD, botUser.getLocale());
 
         result.stream()
-            .map(hlr -> hlrToTelegramResponseConverterFacade.convert(hlr, botUser.getLocale()))
-            .forEach(response -> sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup));
+                .map(hlr -> hlrToTelegramResponseConverterFacade.convert(hlr, botUser.getLocale()))
+                .forEach(response -> sendMessageWithButtons(botUser.getId(), response, replyKeyboardMarkup));
     }
 
     private void whenHlrInfoCompleteSendAnswerAsFile(BotUser botUser, FileEntity requestFile, List<Hlr> result) {
@@ -294,8 +294,8 @@ public class HlrBot extends AbstractTelegramBot {
         try {
             // TODO: 10/10/21 refactor later
             String responseFileName = requestFile.getReceivedFileName()
-                .replaceAll("\\.xls$", ".xlsx")
-                .replaceAll("\\.txt$", ".csv");
+                    .replaceAll("\\.xls$", ".xlsx")
+                    .replaceAll("\\.txt$", ".csv");
 
             responseFile = hlrResultFileWriterFacade.write(fileStorage.create(responseFileName), result);
             final String filename = "Result_" + responseFileName;
@@ -313,8 +313,8 @@ public class HlrBot extends AbstractTelegramBot {
             sendMessageWithButtons(botUser.getId(), messageSource.getDefaultErrorMessage(botUser.getLocale()), replyKeyboardMarkup);
         } finally {
             Optional.ofNullable(responseFile)
-                .map(FileEntity::getId)
-                .ifPresent(fileStorage::delete);
+                    .map(FileEntity::getId)
+                    .ifPresent(fileStorage::delete);
 
             fileStorage.delete(requestFile.getId());
         }
@@ -326,11 +326,11 @@ public class HlrBot extends AbstractTelegramBot {
 
     private void handleActiveState(Message message, BotUser botUser) {
         textInputCommandConverter.convertTextToCommand(message.getText())
-            .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
-                log.info("Message ({}) is not a command.", message.getText());
-                String text = messageSource.getMessage("warning.not-a-command", botUser.getLocale());
-                sendMessageWithButtons(botUser.getId(), text, createReplyKeyboardMarkup(DEFAULT_KEYBOARD, botUser.getLocale()));
-            });
+                .ifPresentOrElse(command -> handleIncomeCommand(command, botUser), () -> {
+                    log.info("Message ({}) is not a command.", message.getText());
+                    String text = messageSource.getMessage("warning.not-a-command", botUser.getLocale());
+                    sendMessageWithButtons(botUser.getId(), text, createReplyKeyboardMarkup(DEFAULT_KEYBOARD, botUser.getLocale()));
+                });
     }
 
     private void handleIncomeCommand(Command command, BotUser botUser) {
@@ -381,22 +381,22 @@ public class HlrBot extends AbstractTelegramBot {
 
     private ReplyKeyboardMarkup createReplyKeyboardMarkup(List<List<Command>> keyboard, Locale locale) {
         var keyboardRows = keyboard.stream()
-            .filter(not(List::isEmpty))
-            .map(commandList -> mapCommandsListToKeyboardRow(commandList, locale))
-            .collect(Collectors.toList());
+                .filter(not(List::isEmpty))
+                .map(commandList -> mapCommandsListToKeyboardRow(commandList, locale))
+                .collect(Collectors.toList());
 
         return ReplyKeyboardMarkup.builder()
-            .clearKeyboard()
-            .keyboard(keyboardRows)
-            .resizeKeyboard(true)
-            .build();
+                .clearKeyboard()
+                .keyboard(keyboardRows)
+                .resizeKeyboard(true)
+                .build();
     }
 
     private KeyboardRow mapCommandsListToKeyboardRow(List<Command> commandList, Locale locale) {
         var row = new KeyboardRow();
         commandList.stream()
-            .map(command -> textInputCommandConverter.convertCommandToButton(command, locale))
-            .forEach(row::add);
+                .map(command -> textInputCommandConverter.convertCommandToButton(command, locale))
+                .forEach(row::add);
 
         return row;
     }

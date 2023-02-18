@@ -55,30 +55,30 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
     public String convert(@NonNull Hlr hlr) {
 
         final String requestedPhoneNumber = Optional.ofNullable(hlr.getPhone())
-            .map(Phone::getRawNumberValue)
-            .orElse("-");
+                .map(Phone::getRawNumberValue)
+                .orElse("-");
 
         if (hlr.getErrorDescription() != null) {
             return buildErrorMessage(hlr.getErrorDescription(), requestedPhoneNumber);
         }
 
         var mainBuilder = new StringBuilder()
-            .append(requestedPhoneNumberKey).append(COLON_SPACE).append(escapeSpecialSymbols(requestedPhoneNumber)).append(EOL)
-            .append(providerIdKey).append(COLON_SPACE).append(hlr.getProviderId()).append(EOL)
-            .append(msisdnKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getMsisdn())).append(EOL)
-            .append(networkKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getNetwork())).append(EOL)
-            .append(statusKey).append(COLON_SPACE).append(capitalize(hlr.getStatus())).append(EOL)
-            .append(portedKey).append(COLON_SPACE).append(hlr.getPorted()).append(EOL)
-            .append(roamingKey).append(COLON_SPACE).append(hlr.getRoaming()).append(EOL)
-            .append(createdAtKey).append(COLON_SPACE).append(hlr.getCreatedAt()).append(EOL)
-            .append(statusReceivedAtKey).append(COLON_SPACE).append(hlr.getStatusReceivedAt()).append(EOL);
+                .append(requestedPhoneNumberKey).append(COLON_SPACE).append(escapeSpecialSymbols(requestedPhoneNumber)).append(EOL)
+                .append(providerIdKey).append(COLON_SPACE).append(hlr.getProviderId()).append(EOL)
+                .append(msisdnKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getMsisdn())).append(EOL)
+                .append(networkKey).append(COLON_SPACE).append(escapeSpecialSymbols(hlr.getNetwork())).append(EOL)
+                .append(statusKey).append(COLON_SPACE).append(capitalize(hlr.getStatus())).append(EOL)
+                .append(portedKey).append(COLON_SPACE).append(hlr.getPorted()).append(EOL)
+                .append(roamingKey).append(COLON_SPACE).append(hlr.getRoaming()).append(EOL)
+                .append(createdAtKey).append(COLON_SPACE).append(hlr.getCreatedAt()).append(EOL)
+                .append(statusReceivedAtKey).append(COLON_SPACE).append(hlr.getStatusReceivedAt()).append(EOL);
 
         final var details = hlr.getDetails();
         if (details != null && !details.isEmpty()) {
             StringBuilder detailsBuilder = new StringBuilder();
 
-            details.forEach((k, v) -> 
-                detailsBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
+            details.forEach((k, v) ->
+                    detailsBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
 
             mainBuilder.append(detailsKey).append(COLON_SPACE).append(EOL).append(detailsBuilder);
         }
@@ -89,7 +89,7 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
             var otherPropertiesBuilder = new StringBuilder();
 
             otherProperties.forEach((k, v) ->
-                otherPropertiesBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
+                    otherPropertiesBuilder.append(TAB).append(bold(k)).append(COLON_SPACE).append(escapeSpecialSymbols(v)).append(EOL));
 
             mainBuilder.append(otherPropertiesKey).append(COLON_SPACE).append(EOL).append(otherPropertiesBuilder);
         }
@@ -100,7 +100,7 @@ public class HlrToTelegramResponseConverterImpl implements HlrToTelegramResponse
     private String buildErrorMessage(String errorMessage, String requestedPhoneNumber) {
         return requestedPhoneNumberKey + COLON_SPACE + requestedPhoneNumber + EOL + errorKey + COLON_SPACE + errorMessage + EOL;
     }
-    
+
     private String bold(String text) {
         return String.format("***%s***", text);
     }

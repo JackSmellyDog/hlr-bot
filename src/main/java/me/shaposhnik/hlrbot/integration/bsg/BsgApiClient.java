@@ -47,18 +47,18 @@ public class BsgApiClient {
         final var multipleHlrResponse = sendHlrs(List.of(hrlRequest), apiKey);
 
         return Optional.ofNullable(multipleHlrResponse.getResult())
-            .orElseGet(Collections::emptyList)
-            .stream()
-            .findFirst()
-            .orElseThrow(BsgException::new);
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .findFirst()
+                .orElseThrow(BsgException::new);
     }
 
     public HlrInfo getHlrInfo(String id, ApiKey apiKey) {
         final var request = new Request.Builder()
-            .url(integrationUrlsProperties.getRequestHlrInfoUrl() + id)
-            .header(X_API_KEY, apiKey.getKey())
-            .get()
-            .build();
+                .url(integrationUrlsProperties.getRequestHlrInfoUrl() + id)
+                .header(X_API_KEY, apiKey.getKey())
+                .get()
+                .build();
 
         try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
@@ -80,10 +80,10 @@ public class BsgApiClient {
 
     public BalanceResponse checkBalance(ApiKey apiKey) {
         final var request = new Request.Builder()
-            .url(integrationUrlsProperties.getBalanceUrl())
-            .header(X_API_KEY, apiKey.getKey())
-            .get()
-            .build();
+                .url(integrationUrlsProperties.getBalanceUrl())
+                .header(X_API_KEY, apiKey.getKey())
+                .get()
+                .build();
 
         try (var response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
@@ -111,10 +111,10 @@ public class BsgApiClient {
             final var requestBody = RequestBody.create(payload, APPLICATION_JSON);
 
             return new Request.Builder()
-                .url(integrationUrlsProperties.getCreateHlrUrl())
-                .header(X_API_KEY, apiKey.getKey())
-                .post(requestBody)
-                .build();
+                    .url(integrationUrlsProperties.getCreateHlrUrl())
+                    .header(X_API_KEY, apiKey.getKey())
+                    .post(requestBody)
+                    .build();
 
         } catch (Exception e) {
             log.error("Failed to create request for HLR!", e);

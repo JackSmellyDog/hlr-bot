@@ -27,12 +27,12 @@ public class PhoneFileReaderFacade {
 
     private void mapFileExtensionsToReader(PhonesFileReader reader) {
         reader.getSupportedFileExtensions()
-            .forEach(extension -> extensionToFileReaderMap.put(extension.toLowerCase(), reader));
+                .forEach(extension -> extensionToFileReaderMap.put(extension.toLowerCase(), reader));
     }
 
     public List<Phone> readPhones(FileEntity fileEntity) {
         return Optional.ofNullable(extensionToFileReaderMap.get(fileEntity.getExtension().toLowerCase()))
-            .map(reader -> reader.readPhones(fileEntity))
-            .orElseThrow(ReadFileException::new);
+                .map(reader -> reader.readPhones(fileEntity))
+                .orElseThrow(ReadFileException::new);
     }
 }

@@ -22,29 +22,29 @@ public class TextInputCommandConverter {
     @PostConstruct
     private void init() {
         commandToAliases = EnumSet.allOf(Command.class).stream()
-            .collect(Collectors.toMap(Function.identity(), this::createAliases));
+                .collect(Collectors.toMap(Function.identity(), this::createAliases));
     }
 
     public Optional<Command> convertTextToCommand(@NonNull String text) {
         return Command.fromString(text)
-            .or(() -> commandToAliases.entrySet().stream()
-                .filter(entry -> entry.getValue().contains(text))
-                .map(Map.Entry::getKey)
-                .findFirst());
+                .or(() -> commandToAliases.entrySet().stream()
+                        .filter(entry -> entry.getValue().contains(text))
+                        .map(Map.Entry::getKey)
+                        .findFirst());
     }
 
     public String convertCommandToButton(Command command, Locale locale) {
         return String.format("%s %s",
-            messageSource.getMessage(command.getEmoji(), locale),
-            messageSource.getMessage(command.getButtonAlias(), locale)
+                messageSource.getMessage(command.getEmoji(), locale),
+                messageSource.getMessage(command.getButtonAlias(), locale)
         );
     }
 
     private Set<String> createAliases(Command command) {
         return hlrBotProperties.getLanguages().stream()
-            .map(Locale::forLanguageTag)
-            .map(locale -> convertCommandToButton(command, locale))
-            .collect(Collectors.toSet());
+                .map(Locale::forLanguageTag)
+                .map(locale -> convertCommandToButton(command, locale))
+                .collect(Collectors.toSet());
     }
 
 }

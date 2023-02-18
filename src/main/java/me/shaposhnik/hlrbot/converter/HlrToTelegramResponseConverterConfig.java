@@ -31,8 +31,8 @@ public class HlrToTelegramResponseConverterConfig {
     @Bean
     public HlrToTelegramResponseConverterFacade hlrToTelegramResponseConverterProvider() {
         final Map<Locale, HlrToTelegramResponseConverter> hlrToTelegramResponseConverterMap = hlrBotProperties.getLanguages().stream()
-            .map(Locale::forLanguageTag)
-            .collect(Collectors.toMap(Function.identity(), this::createConverter));
+                .map(Locale::forLanguageTag)
+                .collect(Collectors.toMap(Function.identity(), this::createConverter));
 
         return new HlrToTelegramResponseConverterFacade(hlrToTelegramResponseConverterMap);
     }

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import me.shaposhnik.hlrbot.model.enums.Ported;
 import me.shaposhnik.hlrbot.model.enums.Roaming;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 

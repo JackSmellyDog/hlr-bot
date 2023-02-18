@@ -55,9 +55,9 @@ public abstract class AbstractExcelPhoneFileReader implements PhonesFileReader {
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Optional.ofNullable(sheet.getRow(i))
-                    .map(row -> row.getCell(indexOfPhoneColumn))
-                    .map(ExcelUtils::mapCellValueToString)
-                    .ifPresent(result::add);
+                        .map(row -> row.getCell(indexOfPhoneColumn))
+                        .map(ExcelUtils::mapCellValueToString)
+                        .ifPresent(result::add);
             }
 
             return result;
