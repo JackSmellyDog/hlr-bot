@@ -28,7 +28,7 @@ public class XlsxHlrResultsFileWriter implements HlrResultsFileWriter {
 
     @Override
     public FileEntity write(FileEntity fileEntity, List<Hlr> hlrRowList) {
-        try(XSSFWorkbook workbook = new XSSFWorkbook()) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
             var sheet = workbook.createSheet(SHEET_NAME);
             createHeader(sheet);
 

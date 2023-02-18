@@ -15,7 +15,7 @@ public class HlrToTelegramResponseConverterFacade {
 
     public String convert(Hlr hlr, Locale locale) {
         var converter = Optional.ofNullable(localeHlrToTelegramResponseConverterMap.get(locale))
-            .orElseGet(() -> localeHlrToTelegramResponseConverterMap.get(DEFAULT_LOCALE));
+                .orElseGet(() -> localeHlrToTelegramResponseConverterMap.get(DEFAULT_LOCALE));
 
         return converter.convert(hlr);
     }

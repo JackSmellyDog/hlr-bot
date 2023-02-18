@@ -25,12 +25,12 @@ public class HlrResultFileEnricherFacade {
 
     private void mapFileExtensionsToEnricher(HlrResultFileEnricher enricher) {
         enricher.getSupportedFileExtensions()
-            .forEach(extension -> extensionToFileEnricherMap.put(extension.toLowerCase(), enricher));
+                .forEach(extension -> extensionToFileEnricherMap.put(extension.toLowerCase(), enricher));
     }
 
     public Optional<FileEntity> enrich(FileEntity fileEntity, List<Hlr> hlrList) {
         return Optional.ofNullable(extensionToFileEnricherMap.get(fileEntity.getExtension().toLowerCase()))
-            .map(enricher -> enricher.enrich(fileEntity, hlrList));
+                .map(enricher -> enricher.enrich(fileEntity, hlrList));
     }
 
 }

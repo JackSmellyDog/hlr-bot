@@ -20,9 +20,9 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     public void sendSimpleMessage(String chatId, String text) {
         var sendMessage = SendMessage.builder()
-            .text(text)
-            .chatId(chatId)
-            .build();
+                .text(text)
+                .chatId(chatId)
+                .build();
 
         try {
             execute(sendMessage);
@@ -37,10 +37,10 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     public void sendMessageWithHTML(String chatId, String html) {
         var sendMessage = SendMessage.builder()
-            .parseMode(ParseMode.HTML)
-            .text(html)
-            .chatId(chatId)
-            .build();
+                .parseMode(ParseMode.HTML)
+                .text(html)
+                .chatId(chatId)
+                .build();
 
         try {
             execute(sendMessage);
@@ -51,11 +51,11 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     public void sendMessageWithButtons(String chatId, String text, ReplyKeyboardMarkup replyKeyboardMarkup) {
         var sendMessage = SendMessage.builder()
-            .parseMode(ParseMode.MARKDOWN)
-            .text(text)
-            .chatId(chatId)
-            .replyMarkup(replyKeyboardMarkup)
-            .build();
+                .parseMode(ParseMode.MARKDOWN)
+                .text(text)
+                .chatId(chatId)
+                .replyMarkup(replyKeyboardMarkup)
+                .build();
 
         try {
             execute(sendMessage);
@@ -104,7 +104,7 @@ public abstract class AbstractTelegramBot extends TelegramLongPollingBot {
 
     protected void sendFile(String chatId, Path pathToFile, String fileName) {
         var inputFile = new InputFile()
-            .setMedia(pathToFile.toFile(), fileName);
+                .setMedia(pathToFile.toFile(), fileName);
 
         var sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);

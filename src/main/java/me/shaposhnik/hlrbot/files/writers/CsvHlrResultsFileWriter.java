@@ -32,8 +32,8 @@ public class CsvHlrResultsFileWriter implements HlrResultsFileWriter {
             pw.println(header);
 
             hlrRowList.stream()
-                .map(this::mapHlrToRow)
-                .forEach(pw::println);
+                    .map(this::mapHlrToRow)
+                    .forEach(pw::println);
 
         } catch (Exception e) {
             log.error("Failed to write to the file", e);
@@ -51,7 +51,7 @@ public class CsvHlrResultsFileWriter implements HlrResultsFileWriter {
         final String network = dashIfNull(hlr.getNetwork());
 
         return List.of(rawNumberValue, msisdn, status, ported, roaming, network)
-            .stream().collect(Collectors.joining(separator));
+                .stream().collect(Collectors.joining(separator));
     }
 
     private String dashIfNull(String str) {

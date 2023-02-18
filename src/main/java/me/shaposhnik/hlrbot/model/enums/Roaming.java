@@ -8,7 +8,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public enum Roaming {
     YES("Yes", Set.of("yes", "y", "true", "1")),
-    NO("No", Set.of("no", "n", "false","0")),
+    NO("No", Set.of("no", "n", "false", "0")),
     UNKNOWN("Unknown", Set.of());
 
     private final String value;
@@ -20,9 +20,9 @@ public enum Roaming {
         }
 
         return Arrays.stream(values())
-            .filter(value -> value.hasAlias(str))
-            .findFirst()
-            .orElse(UNKNOWN);
+                .filter(value -> value.hasAlias(str))
+                .findFirst()
+                .orElse(UNKNOWN);
     }
 
     @Override

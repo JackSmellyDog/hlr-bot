@@ -27,13 +27,13 @@ public class HlrResultFileWriterFacade {
 
     private void mapFileExtensionsToWriter(HlrResultsFileWriter writer) {
         writer.getSupportedFileExtensions()
-            .forEach(extension -> extensionToFileWriterMap.put(extension.toLowerCase(), writer));
+                .forEach(extension -> extensionToFileWriterMap.put(extension.toLowerCase(), writer));
     }
 
     public FileEntity write(FileEntity fileEntity, List<Hlr> hlrList) {
         return Optional.ofNullable(extensionToFileWriterMap.get(fileEntity.getExtension().toLowerCase()))
-            .map(writer -> writer.write(fileEntity, hlrList))
-            .orElseThrow(WriteFileException::new);
+                .map(writer -> writer.write(fileEntity, hlrList))
+                .orElseThrow(WriteFileException::new);
     }
 
 }

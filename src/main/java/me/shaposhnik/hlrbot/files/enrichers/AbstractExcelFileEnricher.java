@@ -34,7 +34,7 @@ public abstract class AbstractExcelFileEnricher implements HlrResultFileEnricher
 
     @Override
     public FileEntity enrich(FileEntity fileEntity, List<Hlr> hlrRowList) {
-        try(Workbook workbook = createWorkbook(fileEntity.toFile())) {
+        try (Workbook workbook = createWorkbook(fileEntity.toFile())) {
             Sheet sheet = workbook.getSheetAt(FIRST_DOCUMENT_SHEET);
             Map<String, Hlr> rawNumberToHlrMap = buildRawNumberToHlrMap(hlrRowList);
 

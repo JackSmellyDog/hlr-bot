@@ -28,10 +28,10 @@ public class PlainTextPhonesFileReader implements PhonesFileReader {
         try (BufferedReader br = Files.newBufferedReader(fileEntity.toPath())) {
 
             return br.lines()
-                .map(phoneService::parseFromString)
-                .flatMap(Collection::stream)
-                .distinct()
-                .collect(Collectors.toList());
+                    .map(phoneService::parseFromString)
+                    .flatMap(Collection::stream)
+                    .distinct()
+                    .collect(Collectors.toList());
 
         } catch (Exception e) {
             log.error("Can't read a file {}.", fileEntity.getReceivedFileName(), e);

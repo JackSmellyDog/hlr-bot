@@ -22,8 +22,8 @@ public enum Command {
 
     public static Optional<Command> fromString(String text) {
         return Stream.of(values())
-            .filter(value -> value.asCommand.equalsIgnoreCase(text))
-            .findFirst();
+                .filter(value -> value.asCommand.equalsIgnoreCase(text))
+                .findFirst();
     }
 
 }

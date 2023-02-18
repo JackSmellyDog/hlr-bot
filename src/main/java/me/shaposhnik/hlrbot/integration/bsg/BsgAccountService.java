@@ -25,11 +25,11 @@ public class BsgAccountService {
         final var bsgApiErrorCode = fromErrorCode(balanceResponse.getError());
 
         return Balance.builder()
-            .amount(balanceResponse.getAmount())
-            .currency(balanceResponse.getCurrency())
-            .limit(balanceResponse.getLimit())
-            .errorDescription(bsgApiErrorCode.getDescription())
-            .build();
+                .amount(balanceResponse.getAmount())
+                .currency(balanceResponse.getCurrency())
+                .limit(balanceResponse.getLimit())
+                .errorDescription(bsgApiErrorCode.getDescription())
+                .build();
     }
 
     public boolean isApiKeyValid(ApiKey apiKey) {
@@ -37,7 +37,7 @@ public class BsgAccountService {
 
         try {
             return apiKey.getKey().matches(VALID_API_KEY_REGEX)
-                && fromErrorCode(api.checkBalance(apiKey).getError()) != INVALID_API_KEY;
+                    && fromErrorCode(api.checkBalance(apiKey).getError()) != INVALID_API_KEY;
         } catch (Exception e) {
             log.error("Fail to send request to BSG to verify Api key");
             throw new BsgException(e);

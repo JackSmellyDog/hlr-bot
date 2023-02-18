@@ -15,20 +15,20 @@ public class BalanceToTelegramResponseConverter {
 
     public String convert(Balance balance, Locale locale) {
         return balance.getAmount() != null
-            ? successfulToString(balance, locale)
-            : failedToString(balance, locale);
+                ? successfulToString(balance, locale)
+                : failedToString(balance, locale);
     }
 
     private String failedToString(Balance balance, Locale locale) {
         return String.format("***%s: *** %s",
-            messageSource.getMessage("response.error", locale),
-            balance.getErrorDescription());
+                messageSource.getMessage("response.error", locale),
+                balance.getErrorDescription());
     }
 
     private String successfulToString(Balance balance, Locale locale) {
         return String.format("***%s:*** %s%n***%s:*** %s%n***%s:*** %s",
-            messageSource.getMessage("response.balance.amount", locale), balance.getAmount(),
-            messageSource.getMessage("response.balance.currency", locale), balance.getCurrency(),
-            messageSource.getMessage("response.balance.limit", locale), balance.getLimit());
+                messageSource.getMessage("response.balance.amount", locale), balance.getAmount(),
+                messageSource.getMessage("response.balance.currency", locale), balance.getCurrency(),
+                messageSource.getMessage("response.balance.limit", locale), balance.getLimit());
     }
 }

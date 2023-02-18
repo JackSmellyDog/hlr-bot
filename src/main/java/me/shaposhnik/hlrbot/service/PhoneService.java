@@ -29,12 +29,12 @@ public class PhoneService {
 
     public List<Phone> toPhones(List<String> plainPhones) {
         return plainPhones.stream()
-            .filter(Objects::nonNull)
-            .filter(not(String::isEmpty))
-            .map(String::trim)
-            .map(Phone::of)
-            .distinct()
-            .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .filter(not(String::isEmpty))
+                .map(String::trim)
+                .map(Phone::of)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public List<Phone> limitPhones(List<Phone> phones) {

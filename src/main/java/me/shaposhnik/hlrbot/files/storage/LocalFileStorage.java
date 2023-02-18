@@ -52,7 +52,7 @@ public class LocalFileStorage implements FileStorage {
     public FileEntity save(Document document, InputStream is) {
 
         Path tempFile = null;
-        try(is) {
+        try (is) {
             final String extension = FilenameUtils.getExtension(document.getFileName());
             final String realFileName = createRealFileName(extension);
             final String fullPath = createFullPath(realFileName);
@@ -61,13 +61,13 @@ public class LocalFileStorage implements FileStorage {
             FileUtils.copyInputStreamToFile(is, tempFile.toFile());
 
             var entity = FileEntity.builder()
-                .id(document.getFileUniqueId())
-                .mimeType(document.getMimeType())
-                .extension(extension)
-                .fullPath(fullPath)
-                .realFileName(realFileName)
-                .receivedFileName(document.getFileName())
-                .build();
+                    .id(document.getFileUniqueId())
+                    .mimeType(document.getMimeType())
+                    .extension(extension)
+                    .fullPath(fullPath)
+                    .realFileName(realFileName)
+                    .receivedFileName(document.getFileName())
+                    .build();
 
             return fileRepository.save(entity);
 
@@ -89,11 +89,11 @@ public class LocalFileStorage implements FileStorage {
     @Override
     public void delete(String id) {
         fileRepository.findByIdAndDeletedFalse(id)
-            .map(FileEntity::toPath)
-            .ifPresent(file -> {
-                delete(file);
-                fileRepository.markDeleted(id);
-            });
+                .map(FileEntity::toPath)
+                .ifPresent(file -> {
+                    delete(file);
+                    fileRepository.markDeleted(id);
+                });
     }
 
     @Override
@@ -110,12 +110,12 @@ public class LocalFileStorage implements FileStorage {
             tempFile = Files.createFile(Path.of(fullPath));
 
             var entity = FileEntity.builder()
-                .id(id)
-                .extension(extension)
-                .fullPath(fullPath)
-                .realFileName(realFileName)
-                .receivedFileName(filename)
-                .build();
+                    .id(id)
+                    .extension(extension)
+                    .fullPath(fullPath)
+                    .realFileName(realFileName)
+                    .receivedFileName(filename)
+                    .build();
 
             return fileRepository.save(entity);
         } catch (Exception e) {

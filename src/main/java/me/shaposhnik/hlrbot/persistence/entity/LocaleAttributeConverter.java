@@ -17,8 +17,8 @@ public class LocaleAttributeConverter implements AttributeConverter<Locale, Stri
     @Override
     public Locale convertToEntityAttribute(String s) {
         return Optional.ofNullable(s)
-            .map(Locale::forLanguageTag)
-            .orElse(DEFAULT_LOCALE);
+                .map(Locale::forLanguageTag)
+                .orElse(DEFAULT_LOCALE);
     }
 
 }
