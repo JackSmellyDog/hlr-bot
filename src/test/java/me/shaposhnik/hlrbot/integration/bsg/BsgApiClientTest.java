@@ -6,19 +6,19 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BsgApiClientTest {
 
-    @Test
-    void sendHlrs() {
-    }
+  @Test
+  void sendHlrs() {
+  }
 
-    @Test
-    void sendHlr() {
-    }
+  @Test
+  void sendHlr() {
+  }
 
-    @Test
-    void getHlrInfo() {
-    }
+  @Test
+  void getHlrInfo() {
+  }
 
-    @Test
-    void checkBalance() {
-    }
+  @Test
+  void checkBalance() {
+  }
 }

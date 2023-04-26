@@ -6,23 +6,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BsgHlrServiceTest {
 
-    @Test
-    void sendHlr() {
-    }
+  @Test
+  void sendHlr() {
+  }
 
-    @Test
-    void sendHlrs() {
-    }
+  @Test
+  void sendHlrs() {
+  }
 
-    @Test
-    void getHlrInfo() {
-    }
+  @Test
+  void getHlrInfo() {
+  }
 
-    @Test
-    void save() {
-    }
+  @Test
+  void save() {
+  }
 
-    @Test
-    void retrieveHlrByProviderId() {
-    }
+  @Test
+  void retrieveHlrByProviderId() {
+  }
 }

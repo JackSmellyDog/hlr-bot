@@ -10,9 +10,9 @@ import lombok.ToString;
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HlrResponse {
-    private String id;
-    private String reference;
-    private int error;
-    private String price;
-    private String currency;
+  private String id;
+  private String reference;
+  private int error;
+  private String price;
+  private String currency;
 }

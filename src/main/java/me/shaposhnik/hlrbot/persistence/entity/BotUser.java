@@ -1,11 +1,20 @@
 package me.shaposhnik.hlrbot.persistence.entity;
 
-import lombok.*;
+import java.util.Locale;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import me.shaposhnik.hlrbot.model.enums.UserState;
 import org.hibernate.annotations.DynamicUpdate;
-
-import javax.persistence.*;
-import java.util.Locale;
 
 @Entity
 @Table(name = "bot_user")
@@ -17,28 +26,28 @@ import java.util.Locale;
 @AllArgsConstructor
 public class BotUser {
 
-    @Id
-    @Column(unique = true, nullable = false)
-    private Long id;
+  @Id
+  @Column(unique = true, nullable = false)
+  private Long id;
 
-    @Column
-    @Enumerated(EnumType.STRING)
-    private UserState state = UserState.NEW;
+  @Column
+  @Enumerated(EnumType.STRING)
+  private UserState state = UserState.NEW;
 
-    @Column
-    private String apiKey;
+  @Column
+  private String apiKey;
 
-    @Column
-    private String userName;
+  @Column
+  private String userName;
 
-    @Column
-    private String firstName;
+  @Column
+  private String firstName;
 
-    @Column
-    private String lastName;
+  @Column
+  private String lastName;
 
-    @Column(name = "language_code")
-    @Convert(converter = LocaleAttributeConverter.class)
-    private Locale locale;
+  @Column(name = "language_code")
+  @Convert(converter = LocaleAttributeConverter.class)
+  private Locale locale;
 
 }

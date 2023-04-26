@@ -11,8 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "integration.bsg.async-hlr-info")
 public class HlrInfoSettings {
 
-    private Integer limit;
+  private Integer limit;
 
-    private Integer pause;
+  private Integer pause;
 
 }
