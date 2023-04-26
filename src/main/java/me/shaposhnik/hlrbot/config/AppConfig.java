@@ -11,17 +11,17 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 public class AppConfig {
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        var objectMapper = new ObjectMapper();
+  @Bean
+  public ObjectMapper objectMapper() {
+    var objectMapper = new ObjectMapper();
 
-        objectMapper.registerModule(new JavaTimeModule());
-        return objectMapper;
-    }
+    objectMapper.registerModule(new JavaTimeModule());
+    return objectMapper;
+  }
 
-    @Bean
-    public OkHttpClient okHttpClient() {
-        return new OkHttpClient();
-    }
+  @Bean
+  public OkHttpClient okHttpClient() {
+    return new OkHttpClient();
+  }
 
 }

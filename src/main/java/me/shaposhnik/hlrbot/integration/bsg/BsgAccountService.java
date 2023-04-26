@@ -1,5 +1,8 @@
 package me.shaposhnik.hlrbot.integration.bsg;
 
+import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.INVALID_API_KEY;
+import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.fromErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.shaposhnik.hlrbot.integration.bsg.dto.ApiKey;
@@ -8,40 +11,37 @@ import me.shaposhnik.hlrbot.integration.bsg.exception.BsgException;
 import me.shaposhnik.hlrbot.model.Balance;
 import org.springframework.stereotype.Service;
 
-import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.INVALID_API_KEY;
-import static me.shaposhnik.hlrbot.integration.bsg.BsgApiErrorCode.fromErrorCode;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BsgAccountService {
-    private static final String VALID_API_KEY_REGEX = "^(live|test)_[\\w]+";
+  private static final String VALID_API_KEY_REGEX = "^(live|test)_\\w+";
+  private final BsgApiClient api;
 
-    private final BsgApiClient api;
+  public Balance checkBalance(ApiKey apiKey) {
+    BalanceResponse balanceResponse = api.checkBalance(apiKey);
+    var bsgApiErrorCode = fromErrorCode(balanceResponse.getError());
 
-    public Balance checkBalance(ApiKey apiKey) {
-        final BalanceResponse balanceResponse = api.checkBalance(apiKey);
+    return Balance.builder()
+        .amount(balanceResponse.getAmount())
+        .currency(balanceResponse.getCurrency())
+        .limit(balanceResponse.getLimit())
+        .errorDescription(bsgApiErrorCode.getDescription())
+        .build();
+  }
 
-        final var bsgApiErrorCode = fromErrorCode(balanceResponse.getError());
-
-        return Balance.builder()
-                .amount(balanceResponse.getAmount())
-                .currency(balanceResponse.getCurrency())
-                .limit(balanceResponse.getLimit())
-                .errorDescription(bsgApiErrorCode.getDescription())
-                .build();
+  public boolean isApiKeyValid(ApiKey apiKey) {
+    if (!apiKey.getKey().matches(VALID_API_KEY_REGEX)) {
+      return false;
     }
 
-    public boolean isApiKeyValid(ApiKey apiKey) {
-        if (!apiKey.getKey().matches(VALID_API_KEY_REGEX)) return false;
-
-        try {
-            return apiKey.getKey().matches(VALID_API_KEY_REGEX)
-                    && fromErrorCode(api.checkBalance(apiKey).getError()) != INVALID_API_KEY;
-        } catch (Exception e) {
-            log.error("Fail to send request to BSG to verify Api key");
-            throw new BsgException(e);
-        }
+    try {
+      return apiKey.getKey().matches(VALID_API_KEY_REGEX)
+          && fromErrorCode(api.checkBalance(apiKey).getError()) != INVALID_API_KEY;
+    } catch (Exception e) {
+      log.error("Fail to send request to BSG to verify Api key");
+      throw new BsgException(e);
     }
+  }
 
 }

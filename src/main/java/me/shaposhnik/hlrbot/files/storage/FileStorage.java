@@ -1,17 +1,16 @@
 package me.shaposhnik.hlrbot.files.storage;
 
+import java.io.InputStream;
 import me.shaposhnik.hlrbot.files.persistence.FileEntity;
 import org.telegram.telegrambots.meta.api.objects.Document;
 
-import java.io.InputStream;
-
 public interface FileStorage {
 
-    FileEntity get(String id);
+  FileEntity get(String id);
 
-    FileEntity save(Document document, InputStream is);
+  FileEntity save(Document document, InputStream is);
 
-    FileEntity create(String filename);
+  FileEntity create(String filename);
 
-    void delete(String id);
+  void delete(String id);
 }

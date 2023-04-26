@@ -1,14 +1,17 @@
 package me.shaposhnik.hlrbot.files.persistence;
 
-import lombok.*;
-import org.hibernate.annotations.DynamicUpdate;
-
+import java.io.File;
+import java.nio.file.Path;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.io.File;
-import java.nio.file.Path;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
 @Table(name = "files")
@@ -20,33 +23,33 @@ import java.nio.file.Path;
 @AllArgsConstructor
 public class FileEntity {
 
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    @Column(nullable = false)
-    private String fullPath;
+  @Column(nullable = false)
+  private String fullPath;
 
-    @Column(nullable = false)
-    private String realFileName;
+  @Column(nullable = false)
+  private String realFileName;
 
-    @Column(nullable = false)
-    private String receivedFileName;
+  @Column(nullable = false)
+  private String receivedFileName;
 
-    @Column(nullable = false)
-    private String extension;
+  @Column(nullable = false)
+  private String extension;
 
-    @Column(nullable = false)
-    private boolean deleted = false;
+  @Column(nullable = false)
+  private boolean deleted = false;
 
-    @Column
-    private String mimeType;
+  @Column
+  private String mimeType;
 
-    public Path toPath() {
-        return Path.of(fullPath);
-    }
+  public Path toPath() {
+    return Path.of(fullPath);
+  }
 
-    public File toFile() {
-        return toPath().toFile();
-    }
+  public File toFile() {
+    return toPath().toFile();
+  }
 
 }

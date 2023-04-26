@@ -4,5 +4,5 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ProfileConstants {
-    public static final String WINDOWS = "windows";
+  public static final String WINDOWS = "windows";
 }

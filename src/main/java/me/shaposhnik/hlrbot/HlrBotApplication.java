@@ -8,8 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication
 public class HlrBotApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(HlrBotApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(HlrBotApplication.class, args);
+  }
 
 }

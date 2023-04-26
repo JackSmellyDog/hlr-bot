@@ -1,12 +1,11 @@
 package me.shaposhnik.hlrbot.integration.bsg.properties;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
-import java.util.List;
 
 @Getter
 @Setter
@@ -15,8 +14,8 @@ import java.util.List;
 @ConfigurationProperties(prefix = "integration.bsg.hlr-statuses")
 public class HlrStatuses {
 
-    private List<String> finalized;
+  private List<String> finalized;
 
-    private List<String> pending;
+  private List<String> pending;
 
 }

@@ -6,6 +6,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class HrlRequest {
-    private final String msisdn;
-    private final String reference;
+  private final String msisdn;
+  private final String reference;
 }

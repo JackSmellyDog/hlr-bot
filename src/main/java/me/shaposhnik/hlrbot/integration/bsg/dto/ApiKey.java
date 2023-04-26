@@ -6,5 +6,5 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor(staticName = "of")
 public class ApiKey {
-    private final String key;
+  private final String key;
 }
