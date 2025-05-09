@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>11</java.version>
-        <apache.poi.version>5.2.2</apache.poi.version>
+        <apache.poi.version>5.4.0</apache.poi.version>
         <checkstyle-maven-plugin.version>3.2.1</checkstyle-maven-plugin.version>
         <maven-pmd-plugin.version>3.20.0</maven-pmd-plugin.version>
     </properties>
